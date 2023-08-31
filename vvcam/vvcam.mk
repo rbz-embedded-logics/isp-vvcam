@@ -32,6 +32,7 @@ vvcam: $(VVCAM_KERNELENVSH) $(VVCAM_SRC_PATH)
 	cp $(VVCAM_SRC_PATH)/sensor/ov2775/ov2775.ko $(VVCAM_OUT);
 	cp $(VVCAM_SRC_PATH)/sensor/camera-proxy-driver/basler-camera-driver-vvcam.ko $(VVCAM_OUT);
 	cp $(VVCAM_SRC_PATH)/sensor/os08a20/os08a20.ko $(VVCAM_OUT);
+	cp $(VVCAM_SRC_PATH)/sensor/ar0234cs/ar0234cs.ko $(VVCAM_OUT);
 	cp $(VVCAM_SRC_PATH)/video/vvcam-video.ko $(VVCAM_OUT);
 	cp $(VVCAM_SRC_PATH)/vvcam-isp.ko $(VVCAM_OUT);
 	cp $(VVCAM_SRC_PATH)/vvcam-dwe.ko $(VVCAM_OUT);
