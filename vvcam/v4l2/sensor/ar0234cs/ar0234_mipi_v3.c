@@ -166,50 +166,7 @@ struct reg_8 {
 	uint8_t offset;
 };
 
-#if 0
-//FROM AR0234CS-REV3.ini
-//[hidden: MIPI4Lane_1920x1200@30fps_Pxlclk22.5MHz_Extclk27MHz]  
-static const struct reg_8 ar0234_init_config[] = {
-	{0x301a, 0x2058, 0xFFFF, 0}, 
-	{0x3088, 0x81ba, 0xFFFF, 0}, 
-	{0x3086, 0x3d02, 0xFFFF, 0},
-	{0x30ba, 0x7626, 0xFFFF, 0}, 
-	{0x31ae, 0x0202, 0xFFFF, 0},//MIPI 2-LANE
-	{0x3002, 0x0008, 0xFFFF, 0},
-	{0x3004, 0x0008, 0xFFFF, 0},
-	{0x3006, 0x04b7, 0xFFFF, 0},
-	{0x3008, 0x0787, 0xFFFF, 0},
-	{0x300a, 0x04C4, 0xFFFF, 0},
-	{0x300c, 0x0500, 0xFFFF, 0},
-	{0x3012, 0x01f0, 0xFFFF, 0},
-	{0x305e, 0x0080, 0xFFFF, 0},
-	{0x31ac, 0x0a0a, 0xFFFF, 0},
-	{0x306e, 0x9010, 0xFFFF, 0},
-	{0x30a2, 0x0001, 0xFFFF, 0},
-	{0x30a6, 0x0001, 0xFFFF, 0},
-	{0x3082, 0x0003, 0xFFFF, 0},
-	{0x3040, 0x0000, 0xFFFF, 0}, 
-	{0x31d0, 0x0000, 0xFFFF, 0}, 
-	{0x3030, 0x007d, 0xFFFF, 0}, //A partir de aqui cambios de PLL. Config para xclk = 50MHz
-	{0x302e, 0x0009, 0xFFFF, 0},
-	{0x302c, 0x0003, 0xFFFF, 0},
-	{0x302a, 0x0003, 0xFFFF, 0},
-	{0x3036, 0x0010, 0xFFFF, 0},
-	{0x3038, 0x0002, 0xFFFF, 0},
-//	{0x31b0, 0x002f, 0xFFFF, 0},
-//	{0x31b2, 0x002C, 0xFFFF, 0},
-//	{0x31b4, 0x1144, 0xFFFF, 0},
-//	{0x31b6, 0x00c7, 0xFFFF, 0},
-//	{0x31b8, 0x3047, 0xFFFF, 0},
-//	{0x31ba, 0x0103, 0xFFFF, 0},
-//	{0x31bc, 0x8583, 0xFFFF, 0},
-	{AR0234_TABLE_END, 0x0000, 0x0000, 0} //end config
-
-};
-#endif
-
-
-
+/* Con reloj externo a 54 MHz */
 static const struct reg_8 ar0234_init_config[] = {
 	{0x301a, 0x2058, 0xFFFF, 0}, 
 	{0x302a, 0x0005, 0xFFFF, 0}, //VT_PIX_CLK_DIV
@@ -257,14 +214,6 @@ static const struct reg_8 ar0234_init_config[] = {
 	{0x3036, 0x000a, 0xFFFF, 0}, //OP_PIX_CLK_DIV
 	{0x3038, 0x0001, 0xFFFF, 0}, //OP_SYS_CLK_DIV
 	{0x30b0, 0x0028, 0xFFFF, 0}, //DIGITAL_TEST
-	
-//	{0x3030, 0x007d, 0xFFFF, 0}, //A partir de aqui cambios de PLL. Config para xclk = 50MHz
-//	{0x302e, 0x0009, 0xFFFF, 0},
-//	{0x302c, 0x0001, 0xFFFF, 0},
-//	{0x302a, 0x0009, 0xFFFF, 0},
-//	{0x3036, 0x000A, 0xFFFF, 0},
-//	{0x3038, 0x0001, 0xFFFF, 0},//FIN CAMBIOS PLL
-	
 	{0x305e, 0x00ff, 0xFFFF, 0},//GLOBAL_GAIN
 	{0x31b0, 0x0075, 0xFFFF, 0}, //FRAME_PREAMBLE
 	{0x31b2, 0x0054, 0xFFFF, 0}, //LINE_PREAMBLE
@@ -289,25 +238,7 @@ static const struct reg_8 ar0234_init_config[] = {
 	{0x3082, 0x0003, 0xFFFF, 0},
 	{0x3040, 0x0000, 0xFFFF, 0}, 
 	{0x31d0, 0x0000, 0xFFFF, 0}, 
-//	{0x3088, 0x8050, 0xFFFF, 0}, //SEQ_CONTROL_PORT
-//	{0x3086, 0x9237, 0xFFFF, 0}, //SEQ_DATA_PORT
-//	{0x3096, 0x0280, 0xFFFF, 0}, //RESERVED
-//	{0x31e0, 0x0003, 0xFFFF, 0}, //PIX_DEF_ID
-//	{0x30b0, 0x0028, 0xFFFF, 0}, //DIGITAL_TEST
-//	{0x3f4c, 0x121f, 0xFFFF, 0}, //RESERVED
-//	{0x3f4e, 0x121f, 0xFFFF, 0}, //RESERVED
-//	{0x3f50, 0x0b81, 0xFFFF, 0}, //RESERVED
-//	{0x3088, 0x81ba, 0xFFFF, 0}, //SEQ_CONTROL_PORT
-//	{0x3086, 0x3d02, 0xFFFF, 0}, //SEQ_DATA_PORT
-//	{0x3ed2, 0xfa96, 0xFFFF, 0}, //RESERVED
-//	{0x3180, 0xfa96, 0xFFFF, 0}, //RESERVED
-//	{0x3ecc, 0x0d42, 0xFFFF, 0}, //RESERVED
-//	{0x30f0, 0x2283, 0xFFFF, 0}, //RESERVED
-//	{0x3102, 0x5000, 0xFFFF, 0}, //AE_LUMA_TARGET
-//	{0x3060, 0x0001, 0xFFFF, 0}, //ANALOG_GAIN
-//	{0x30ba, 0x7626, 0xFFFF, 0}, 
 	{AR0234_TABLE_END, 0x0000, 0x0000, 0} //end config
-
 };
 */
 
@@ -386,22 +317,6 @@ static inline int ar0234_read_reg(struct star0234 *priv, u16 addr, u16 *val)
 	return err;
 }
 
-/*
-   static inline int ar0234_write_reg(struct star0234 *priv, u16 addr, u16 val)
-   {
-   int err;
-   err = regmap_write(priv->regmap, addr, val);
-   if (err)
-   dev_err(&priv->client->dev,
-   "%s : i2c write failed, %x = %x\n", __func__,
-   addr, val);
-   else
-   dev_dbg(&priv->client->dev,
-   "%s : addr 0x%x, val=0x%x\n", __func__,
-   addr, val);
-   return err;
-   }
-   */
 
 static int ar0234_write_reg(struct star0234 *ar0234, u16 reg, u16 val)
 {
@@ -417,9 +332,6 @@ static int ar0234_write_reg(struct star0234 *ar0234, u16 reg, u16 val)
 		dev_err(dev, "Write reg error: reg=%x, val=%x\n", reg, val);
 		return -1;
 	}
-#ifdef DEBUG
-	printk("Escritura done!\n");
-#endif
 	return 0;
 
 }
@@ -436,78 +348,17 @@ static int ar0234_get_clk(struct star0234 *ar0234, void *clk)
 	return ret;
 }
 
-#if 0
-static int ar0234_write_reg_arry(struct star0234 *ar0234,
-		struct vvcam_sccb_data_s *reg_arry,
-		u32 size)
-{
-	/*
-	   int i = 0;
-	   int ret = 0;
-	   struct i2c_msg msg;
-	   u8 *send_buf;
-	   u32 send_buf_len = 0;
-	   struct i2c_client *i2c_client = ar0234->client;
-
-	   send_buf = (u8 *)kmalloc(size + 2, GFP_KERNEL);
-	   if (!send_buf)
-	   return -ENOMEM;
-
-	   send_buf[send_buf_len++] = (reg_arry[0].addr >> 8) & 0xff;
-	   send_buf[send_buf_len++] = reg_arry[0].addr & 0xff;
-	   send_buf[send_buf_len++] = reg_arry[0].data & 0xff;
-	   for (i=1; i < size; i++) {
-	   if (reg_arry[i].addr == (reg_arry[i-1].addr + 1)){
-	   send_buf[send_buf_len++] = reg_arry[i].data & 0xff;
-	   } else {
-	   msg.addr  = i2c_client->addr;
-	   msg.flags = i2c_client->flags;
-	   msg.buf   = send_buf;
-	   msg.len   = send_buf_len;
-	   ret = i2c_transfer(i2c_client->adapter, &msg, 1);
-	   if (ret < 0) {
-	   pr_err("%s:i2c transfer error\n",__func__);
-	   kfree(send_buf);
-	   return ret;
-	   }
-	   send_buf_len = 0;
-	   send_buf[send_buf_len++] =
-	   (reg_arry[i].addr >> 8) & 0xff;
-	   send_buf[send_buf_len++] =
-	   reg_arry[i].addr & 0xff;
-	   send_buf[send_buf_len++] =
-	   reg_arry[i].data & 0xff;
-	   }
-	   }
-
-	   if (send_buf_len > 0) {
-	   msg.addr  = i2c_client->addr;
-	   msg.flags = i2c_client->flags;
-	   msg.buf   = send_buf;
-	   msg.len   = send_buf_len;
-	   ret = i2c_transfer(i2c_client->adapter, &msg, 1);
-	   if (ret < 0)
-	   pr_err("%s:i2c transfer end meg error\n",__func__);
-	   else
-	   ret = 0;
-	   }
-	   kfree(send_buf);
-	   return ret;*/
-	return 0;
-}
-
-#endif
 
 
 static int ar0234_set_exposure(struct star0234 *ar0234, u32 new_exp)
 {
 	int ret =  0;
-	//u16 real_exposure = 0;
 	u64 coarse_exp_time = 0;
 	u16 llp = 0;
 
+#ifdef DEBUG
 	printk("%s: Trying exposure value: %d", __func__, new_exp);
-	
+#endif	
 
 	if(new_exp > AR0234_MAX_EXPOSURE_TIME)
 	{
@@ -527,13 +378,10 @@ static int ar0234_set_exposure(struct star0234 *ar0234, u32 new_exp)
 		// Computing COARSE INTEGRATION TIME register value. Time new_exp given in microseconds.
 		coarse_exp_time = AR0234_PIX_CLK/1000000;
 		coarse_exp_time = coarse_exp_time * new_exp/ llp;
-		// Computing COARSE INTEGRATRION TIME register value. Time new_exp given in milliseconds.
-		//coarse_exp_time = new_exp * AR0234_PIX_CLK / (1000 * llp);
-		
 		
 		if (coarse_exp_time > (ar0234->format.width + ar0234->x_start - 1) )
 		{
-			printk("%s: CIT value not valid for this resolution",__func__);
+			printk("%s: ERROR. CIT value not valid for this resolution",__func__);
 			return -1;
 		}
 			
@@ -557,11 +405,12 @@ static int ar0234_set_digital_gain(struct star0234 *priv,int val)
 {
         int res  = 0;
         u16 gain = val / 1024;
+#ifdef DEBUG
 	printk("%s: Trying to set %d gain\n", __func__, gain);
-	
+#endif
 	if (gain < AR0234_MIN_GAIN || gain > AR0234_MAX_GAIN)
 	{
-		printk("%s: Gain value out of range, setting gain to maximum (%d)\n",__func__, AR0234_MAX_GAIN);
+		printk("%s: ERROR. Gain value out of range, setting gain to maximum (%d)\n",__func__, AR0234_MAX_GAIN);
 		gain = AR0234_MAX_GAIN;
 	}
 	res = ar0234_write_reg(priv, DIGITAL_GAIN_REG, gain);
@@ -612,7 +461,10 @@ static int ar0234_set_h_pos(struct star0234 *ar0234, int new_h_pos)
 {
   int res = 0;
 
+#ifdef DEBUG
   printk("%s: %d\n", __func__, new_h_pos);
+#endif
+  
   ar0234->x_start = new_h_pos;
   //ar0234_write_reg(ar0234, X_ADDR_START_REG, new_h_pos);
   //ar0234_write_reg(ar0234, X_ADDR_END_REG, ar0234->format.width + new_h_pos - 1);
@@ -623,7 +475,10 @@ static int ar0234_set_v_pos(struct star0234 *ar0234, int new_v_pos)
 {
   int res = 0;
 
+#ifdef DEBUG
   printk("%s: %d\n", __func__, new_v_pos);
+#endif
+  
   ar0234->y_start = new_v_pos;
   //ar0234_write_reg(ar0234, Y_ADDR_START_REG, new_v_pos);
   //ar0234_write_reg(ar0234, Y_ADDR_END_REG, ar0234->format.height + new_v_pos - 1);
@@ -811,13 +666,13 @@ static int ar0234_set_fmt(struct v4l2_subdev *sd, struct v4l2_subdev_state *stat
 	if((fmt->width + ar0234->x_start - 1) > AR0234_MAX_WIDTH) {
         	ar0234_write_reg(ar0234, X_ADDR_START_REG, 0);
             	ar0234->x_start = AR0234_MAX_WIDTH - fmt->width;
-            	printk("La imagen se pasa de ancho, cambiar ROI\n");
+            	printk("%s ERROR. La imagen se pasa de ancho, cambiar ROI\n",__func__);
     	}
 
     	if((fmt->height + ar0234->y_start - 1) > AR0234_MAX_HEIGHT) {
             	ar0234_write_reg(ar0234, Y_ADDR_START_REG, 0);
             	ar0234->y_start = AR0234_MAX_HEIGHT - fmt->height;
-            	printk("La imagen se pasa de alto, cambiar ROI\n");
+            	printk("%s ERROR. La imagen se pasa de alto, cambiar ROI\n", __func__);
     	}
 	
     	//ar0234_write_reg(ar0234, X_ADDR_END_REG, (fmt->width + ar0234->x_start -1));
@@ -832,8 +687,11 @@ static int ar0234_set_fmt(struct v4l2_subdev *sd, struct v4l2_subdev_state *stat
 		return -EINVAL;
 	}
 
+#ifdef DEBUG
 	printk("%s: end = %dx%d\n", __func__, (fmt->width + ar0234->x_start -1), (fmt->height + ar0234->y_start - 1));
-//	fmt->code = BAYER_RGGB;
+#endif
+    
+    //	fmt->code = BAYER_RGGB;
 	fmt->field = V4L2_FIELD_NONE;
 	ar0234->format = *fmt;
 	mutex_unlock(&ar0234->lock);
@@ -848,8 +706,12 @@ static int ar0234_query_capabilities(struct star0234 *ar0234, void *arg)
 
 	strcpy((char *)pcap->driver, "ar0234cs");
 	sprintf((char *)pcap->bus_info, "csi%d",ar0234->csi_id);
-	printk("%s: csi%d\n", __func__, ar0234->csi_id);
-	//sprintf((char *)pcap->bus_info, "csi0");
+
+#ifdef DEBUG
+    printk("%s: csi%d\n", __func__, ar0234->csi_id);
+#endif
+    
+    //sprintf((char *)pcap->bus_info, "csi0");
 	if(ar0234->client->adapter) {
 		pcap->bus_info[VVCAM_CAP_BUS_INFO_I2C_ADAPTER_NR_POS] =
 			(__u8)ar0234->client->adapter->nr;
@@ -969,10 +831,12 @@ static int ar0234_set_fps(struct star0234 *ar0234, u32 fps)
 	
 	
 	reg_val = (AR0234_PIX_CLK/reg_val)*ar0234->ctrls.exposure->cur.val/1000000;
-	#ifdef DEBUG
+	
+#ifdef DEBUG
 	printk("%s: COARSE_INTEGRATION_TIME gonna be: %d", __func__, reg_val);
-	#endif
-	ret = ar0234_write_reg(ar0234, COARSE_INTEGRATION_TIME_REG, (u16) reg_val);
+#endif
+
+    ret = ar0234_write_reg(ar0234, COARSE_INTEGRATION_TIME_REG, (u16) reg_val);
 	
 #endif
 	return ret;
@@ -988,10 +852,11 @@ static long ar0234_priv_ioctl(struct v4l2_subdev *sd,
 	struct vvcam_sccb_data_s sensor_reg;
 	void *arg = arg_user;
 
+#ifdef DEBUG
 	printk("%s cmd = 0x%x\n", __func__, cmd);
+#endif	
 	
-	mutex_lock(&ar0234->lock);
-	printk("%s: mutex locked\n", __func__);
+    mutex_lock(&ar0234->lock);
 	switch(cmd)
 	{
 		case VVSENSORIOC_S_POWER:
@@ -1007,13 +872,17 @@ static long ar0234_priv_ioctl(struct v4l2_subdev *sd,
 			ret = 0;
 			break;
 		case VIDIOC_QUERYCAP:
-			printk("%s: Consulta capabilities", __func__);
-			ret = ar0234_query_capabilities(ar0234, arg);
+#ifdef DEBUG
+			printk("%s: Query capabilities", __func__);
+#endif
+            ret = ar0234_query_capabilities(ar0234, arg);
 			break;
         	case VVSENSORIOC_QUERY:
 			USER_TO_KERNEL(struct vvcam_mode_info_array_s);
-			printk("%s: Consulta support",__func__);
-			ret = ar0234_query_supports(ar0234, arg);
+#ifdef DEBUG
+			printk("%s: Query support",__func__);
+#endif
+            ret = ar0234_query_supports(ar0234, arg);
 			KERNEL_TO_USER(struct vvcam_mode_info_array_s);
 			break;
        		case VVSENSORIOC_WRITE_REG:
@@ -1040,7 +909,7 @@ static long ar0234_priv_ioctl(struct v4l2_subdev *sd,
 		case VVSENSORIOC_S_SENSOR_MODE:
 			ret = ar0234_set_sensor_mode(ar0234, arg);
 			break;
-		case VVSENSORIOC_S_GAIN: //Warning. La ganancia ahora mismo deja una imagen rara.
+		case VVSENSORIOC_S_GAIN: 
 			USER_TO_KERNEL(int);
 			ret = ar0234_set_digital_gain(ar0234, *(int *)arg);
 			ret = 0;
@@ -1059,14 +928,18 @@ static long ar0234_priv_ioctl(struct v4l2_subdev *sd,
 			break;
 		case VVSENSORIOC_S_FPS:	
 			USER_TO_KERNEL(int);
+#ifdef DEBUG
 			printk("%s: IOCTL VVSENSORIOC_S_FPS called successfully, arg_value: %d\n",__func__, *(int *)arg);
-			ret = ar0234_set_fps(ar0234, *(int *)arg); 
+#endif
+            ret = ar0234_set_fps(ar0234, *(int *)arg); 
 			break;
 		case VVSENSORIOC_G_FPS:
 			ret = ar0234_get_fps(ar0234, arg);
 			break;
 		case VVSENSORIOC_S_STREAM:
+#ifdef DEBUG
 			printk("%s: VVSENSORIOC_S_STREAM\n", __func__);
+#endif
 			USER_TO_KERNEL(int);
 			ret = ar0234_s_stream(sd, *(int *)arg);
 			break;
@@ -1098,7 +971,6 @@ static long ar0234_priv_ioctl(struct v4l2_subdev *sd,
 	}
 
 	mutex_unlock(&ar0234->lock);
-	printk("%s: mutex unlocked\n", __func__);
 	return ret;
 }
 
@@ -1138,7 +1010,10 @@ static int ar0234_s_stream(struct v4l2_subdev *sd, int on) {
 static int ar0234_power_on(struct star0234 *ar0234)
 {
 	int ret = 0;
+
+#ifdef DEBUG
 	printk("%s: enter \n", __func__);
+#endif
 
 	ret = clk_prepare_enable(ar0234->sensor_clk);
 
@@ -1155,8 +1030,10 @@ static int ar0234_power_on(struct star0234 *ar0234)
 
 static int ar0234_power_off(struct star0234 *ar0234)
 {
+#ifdef DEBUG
 	printk("enter %s\n", __func__);
-	clk_disable_unprepare(ar0234->sensor_clk);
+#endif
+    clk_disable_unprepare(ar0234->sensor_clk);
 	/*
 	if (gpio_is_valid(ar0234->pwn_gpio))
 		gpio_set_value_cansleep(ar0234->pwn_gpio, 0);
@@ -1168,9 +1045,11 @@ static int ar0234_power_off(struct star0234 *ar0234)
 static int ar0234_s_power(struct v4l2_subdev *sd, int on)
 {
 	struct star0234 *ar0234 = to_ar0234(sd);
-
+#ifdef DEBUG
 	printk("%s: setting power to: %d\n",__func__, on);
-	if(on)
+#endif
+
+    if(on)
 		ar0234_power_on(ar0234);
 	else
 		ar0234_power_off(ar0234);
@@ -1180,8 +1059,11 @@ static int ar0234_s_power(struct v4l2_subdev *sd, int on)
 
 static int ar0234_reset(struct star0234 *ar0234)
 {
+#ifdef DEBUG
 	printk("enter %s\n",__func__);
-	if (!gpio_is_valid(ar0234->rst_gpio))
+#endif
+
+    if (!gpio_is_valid(ar0234->rst_gpio))
 		return -1;
 
 	gpio_set_value_cansleep(ar0234->rst_gpio, 0);
@@ -1205,7 +1087,10 @@ static int ar0234_link_setup(struct media_entity *entity,
 
 static int ar0234_get_format_code(struct star0234 *ar0234, u32 *code)
 {
+#ifdef DEBUG
 	printk("%s\n", __func__);
+#endif
+
 	switch (ar0234->cur_mode.bayer_pattern) {
 		case BAYER_RGGB:
 			if (ar0234->cur_mode.bit_width == 8) {
@@ -1283,8 +1168,9 @@ static int ar0234_enum_mbus_code(struct v4l2_subdev *sd,
 
 	u32 cur_code = MEDIA_BUS_FMT_SGRBG10_1X10;
 
+#ifdef DEBUG
 	printk("%s\n", __func__);
-
+#endif
 	/*if (code->index > 0)*/
 	/*return -EINVAL;*/
 	ar0234_get_format_code(sensor, &cur_code);
@@ -1351,18 +1237,6 @@ static const struct v4l2_ctrl_config ar0234_ctrl_roi_v_position = {
         .def = 8,
 };
 
-/* Como no se como será el flash que acompanie al bicho, no hago nada todavía.
-static const struct v4l2_ctrl_config ar0234_ctrl_flash_time = {
-        .ops = &ar0234_ctrl_ops,
-        .id = V4L2_CID_FLASH_TIME,
-        .name = "Flash time",
-        .type = V4L2_CTRL_TYPE_INTEGER,
-        .min = 0,
-        .max = 1000,
-        .step = 1,
-        .def = 0,
-};
-*/
 static const struct v4l2_ctrl_config ar0234_ctrl_analog_gain = {
         .ops = &ar0234_ctrl_ops,
         .id = V4L2_CID_ANALOG_GAIN,
@@ -1474,13 +1348,18 @@ static int ar0234_probe(struct i2c_client *client, const struct i2c_device_id *i
   //ar0234->sensor_clk->mclk = 50000000;
   clk_set_rate(ar0234->sensor_clk, 50000000);
 
+#ifdef DEBUG
   printk("%s: clk_set_rate done\n", __func__);
+#endif
 
   if ( clk_prepare_enable(ar0234->sensor_clk))
   {
   	dev_err(&client->dev, "enable sensor clk fail");
   }
+
+#ifdef DEBUG
   printk("%s: clk_prepare_enable done\n", __func__);
+#endif
 
   ep = of_graph_get_next_endpoint(dev->of_node, NULL);
   if (!ep) {
@@ -1496,7 +1375,6 @@ static int ar0234_probe(struct i2c_client *client, const struct i2c_device_id *i
 
   ar0234->ocp.max_pixel_frequency = mpf;
 
-  printk("%s: mpf\n", __func__);
   /* initialize format */
  // ar0234->crop.width = AR0234_MAX_WIDTH;
  // ar0234->crop.height = AR0234_MAX_HEIGHT;
@@ -1529,7 +1407,10 @@ static int ar0234_probe(struct i2c_client *client, const struct i2c_device_id *i
     ret = -ENODEV;
     goto err_regmap;
   }
+
+#ifdef DEBUG
   printk("%s: Regmap initialized... ",__func__);
+#endif
 
   /* Default sensor configuration */
   ret = ar0234_write_table(ar0234, ar0234_init_config);
@@ -1542,8 +1423,9 @@ static int ar0234_probe(struct i2c_client *client, const struct i2c_device_id *i
   /* Initialize subdevice */
   sd = &ar0234->sd;
   v4l2_i2c_subdev_init(sd, client, &ar0234_subdev_ops);
+#ifdef DEBUG
   printk("%s: subdev_init\n", __func__);
-
+#endif
   /* initialize subdev media pad */
   //strlcpy(sd->name, DRIVER_NAME, sizeof(sd->name));
   sd->flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
@@ -1553,7 +1435,11 @@ static int ar0234_probe(struct i2c_client *client, const struct i2c_device_id *i
   ar0234->pad.flags = MEDIA_PAD_FL_SOURCE;
 
   ret = media_entity_pads_init(&sd->entity, 1, &ar0234->pad);
+
+#ifdef DEBUG
   printk("%s: media_entity_pads_init\n", __func__);
+#endif
+
   if (ret < 0) {
     dev_err(&client->dev,
         "%s : media entity init Failed %d\n", __func__, ret);
@@ -1562,7 +1448,11 @@ static int ar0234_probe(struct i2c_client *client, const struct i2c_device_id *i
 
   /* register subdevice */
   ret = v4l2_async_register_subdev(sd);
+
+#ifdef DEBUG
   printk("%s: register_subdev\n", __func__);
+#endif
+
   if (ret < 0) {
     dev_err(&client->dev,
         "%s : v4l2_async_register_subdev failed %d\n",
@@ -1625,8 +1515,9 @@ static int ar0234_probe(struct i2c_client *client, const struct i2c_device_id *i
     goto err_ctrls;
   }
 
+#ifdef DEBUG
   printk("%s: Controls set",__func__); 
-
+#endif
   /* setup default controls */
   ret = v4l2_ctrl_handler_setup(&ar0234->ctrls.handler);
   if (ret) {
