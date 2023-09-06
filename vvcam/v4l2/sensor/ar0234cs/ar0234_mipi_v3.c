@@ -36,7 +36,7 @@
 #define AR0234_TRIGGER_ENABLED_MODE 0x2958 //temp
 #define AR0234_MAX_EXPOSURE_TIME	10000
 #define AR0234_MIN_EXPOSURE_TIME	50
-#define AR0234_MAX_GAIN			1023
+#define AR0234_MAX_GAIN			65535
 #define AR0234_MIN_GAIN			150
 #define AR0234_DEF_GAIN			150
 #define AR0234_MAX_ANALOG_GAIN		15	
@@ -52,7 +52,7 @@
 
 #define AR0234_TABLE_END		0xffff
 
-#define AR0234_PIX_CLK			41666666
+#define AR0234_PIX_CLK			45000000
 
 #define AR0234_EXP_TIME_OUT_RANGE (-1)
 
@@ -69,7 +69,8 @@
 #define SENSOR_MODEL_MONO   0
 #define SENSOR_MODEL_COLOR  1
 
-#define SLAVE_MODE	    1
+#define MASTER_MODE	    0
+
 
 #define DEBUG 1 //Comment this line for disabling DEBUG traces
 
@@ -207,13 +208,53 @@ static const struct reg_8 ar0234_init_config[] = {
 };
 #endif
 
+
+
 static const struct reg_8 ar0234_init_config[] = {
 	{0x301a, 0x2058, 0xFFFF, 0}, 
 	{0x302a, 0x0005, 0xFFFF, 0}, //VT_PIX_CLK_DIV
 	{0x302c, 0x0001, 0xFFFF, 0}, //VT_SYS_CLK_DIV
-	{0x302e, 0x0006, 0xFFFF, 0}, //PRE_PLL_CLK_DIV
-	{0x3030, 0x0032, 0xFFFF, 0}, //PLL_MULTIPLIER
-	{0x3036, 0x000A, 0xFFFF, 0}, //OP_PIX_CLK_DIV
+	{0x302e, 0x0003, 0xFFFF, 0}, //PRE_PLL_CLK_DIV
+	{0x3030, 0x0018, 0xFFFF, 0}, //PLL_MULTIPLIER
+	{0x3036, 0x000a, 0xFFFF, 0}, //OP_PIX_CLK_DIV
+	{0x3038, 0x0001, 0xFFFF, 0}, //OP_SYS_CLK_DIV
+	{0x30b0, 0x0028, 0xFFFF, 0}, //DIGITAL_TEST
+	{0x305e, 0x00ff, 0xFFFF, 0},//GLOBAL_GAIN
+	{0x31b0, 0x0075, 0xFFFF, 0}, //FRAME_PREAMBLE
+	{0x31b2, 0x0054, 0xFFFF, 0}, //LINE_PREAMBLE
+	{0x31b4, 0x4247, 0xFFFF, 0},//MIPI_TIMING_0
+	{0x31b6, 0x4215, 0xFFFF, 0},//MIPI_TIMING_1
+	{0x31b8, 0x804a, 0xFFFF, 0},//MIPI_TIMING_2
+	{0x31ba, 0x028a, 0xFFFF, 0},//MIPI_TIMING_3
+	{0x31bc, 0x0c08, 0xFFFF, 0},//MIPI_TIMING_4
+	{0x3354, 0x002b, 0xFFFF, 0},//MIPI_CNTRL
+	{0x31ac, 0x0a0a, 0xFFFF, 0}, //DATA_FORMAT_BITS
+	{0x31ae, 0x0202, 0xFFFF, 0},//MIPI 2-LANE
+	{0x3002, 0x0044, 0xFFFF, 0},//Y_ADDR_START
+	{0x3004, 0x0008, 0xFFFF, 0},//X_ADDR_START
+	{0x3006, 0x047B, 0xFFFF, 0},//Y_ADDR_END
+	{0x3008, 0x0787, 0xFFFF, 0},//X_ADDR_END
+	{0x300a, 0x087d, 0xFFFF, 0},//FRAME_LENGTH_LINES
+	{0x300c, 0x0264, 0xFFFF, 0},//LINE_LENGTH_PCK
+	{0x3012, 0x07a8, 0xFFFF, 0},//COARSE_INTEGRATION_TIME
+	{0x306e, 0x9010, 0xFFFF, 0},
+	{0x30a2, 0x0001, 0xFFFF, 0},
+	{0x30a6, 0x0001, 0xFFFF, 0},
+	{0x3082, 0x0003, 0xFFFF, 0},
+	{0x3040, 0x0000, 0xFFFF, 0}, 
+	{0x31d0, 0x0000, 0xFFFF, 0}, 
+	{AR0234_TABLE_END, 0x0000, 0x0000, 0} //end config
+
+};
+
+/* Con reloj externo a 50Mhz
+static const struct reg_8 ar0234_init_config[] = {
+	{0x301a, 0x2058, 0xFFFF, 0}, 
+	{0x302a, 0x0005, 0xFFFF, 0}, //VT_PIX_CLK_DIV
+	{0x302c, 0x0001, 0xFFFF, 0}, //VT_SYS_CLK_DIV
+	{0x302e, 0x0003, 0xFFFF, 0}, //PRE_PLL_CLK_DIV
+	{0x3030, 0x0018, 0xFFFF, 0}, //PLL_MULTIPLIER
+	{0x3036, 0x000a, 0xFFFF, 0}, //OP_PIX_CLK_DIV
 	{0x3038, 0x0001, 0xFFFF, 0}, //OP_SYS_CLK_DIV
 	{0x30b0, 0x0028, 0xFFFF, 0}, //DIGITAL_TEST
 	
@@ -224,24 +265,24 @@ static const struct reg_8 ar0234_init_config[] = {
 //	{0x3036, 0x000A, 0xFFFF, 0},
 //	{0x3038, 0x0001, 0xFFFF, 0},//FIN CAMBIOS PLL
 	
-	{0x305e, 0x00ff, 0xFFFF, 0},
-	{0x31b0, 0x0082, 0xFFFF, 0},
-	{0x31b2, 0x005c, 0xFFFF, 0},
-	{0x31b4, 0x5248, 0xFFFF, 0},
-	{0x31b6, 0x3298, 0xFFFF, 0},
-	{0x31b8, 0x914b, 0xFFFF, 0},
-	{0x31ba, 0x030c, 0xFFFF, 0},
-	{0x31bc, 0x8e09, 0xFFFF, 0},
-	{0x3354, 0x002b, 0xFFFF, 0},
+	{0x305e, 0x00ff, 0xFFFF, 0},//GLOBAL_GAIN
+	{0x31b0, 0x0075, 0xFFFF, 0}, //FRAME_PREAMBLE
+	{0x31b2, 0x0054, 0xFFFF, 0}, //LINE_PREAMBLE
+	{0x31b4, 0x4247, 0xFFFF, 0},//MIPI_TIMING_0
+	{0x31b6, 0x4215, 0xFFFF, 0},//MIPI_TIMING_1
+	{0x31b8, 0x804a, 0xFFFF, 0},//MIPI_TIMING_2
+	{0x31ba, 0x028a, 0xFFFF, 0},//MIPI_TIMING_3
+	{0x31bc, 0x0c08, 0xFFFF, 0},//MIPI_TIMING_4
+	{0x3354, 0x002b, 0xFFFF, 0},//MIPI_CNTRL
+	{0x31ac, 0x0a0a, 0xFFFF, 0}, //DATA_FORMAT_BITS
 	{0x31ae, 0x0202, 0xFFFF, 0},//MIPI 2-LANE
-	{0x3002, 0x0008, 0xFFFF, 0},//Y_ADDR_START
+	{0x3002, 0x0044, 0xFFFF, 0},//Y_ADDR_START
 	{0x3004, 0x0008, 0xFFFF, 0},//X_ADDR_START
-	{0x3006, 0x043b, 0xFFFF, 0},//Y_ADDR_END
+	{0x3006, 0x047B, 0xFFFF, 0},//Y_ADDR_END
 	{0x3008, 0x0787, 0xFFFF, 0},//X_ADDR_END
-	{0x300a, 0x0448, 0xFFFF, 0},//FRAME_LENGTH_LINES
-	{0x300c, 0x072c, 0xFFFF, 0},//LINE_LENGTH_PCK
-	{0x3012, 0x0100, 0xFFFF, 0},//COARSE_INTEGRATION_TIME
-	{0x31ac, 0x0a0a, 0xFFFF, 0},
+	{0x300a, 0x087d, 0xFFFF, 0},//FRAME_LENGTH_LINES
+	{0x300c, 0x0264, 0xFFFF, 0},//LINE_LENGTH_PCK
+	{0x3012, 0x07a8, 0xFFFF, 0},//COARSE_INTEGRATION_TIME
 	{0x306e, 0x9010, 0xFFFF, 0},
 	{0x30a2, 0x0001, 0xFFFF, 0},
 	{0x30a6, 0x0001, 0xFFFF, 0},
@@ -250,25 +291,25 @@ static const struct reg_8 ar0234_init_config[] = {
 	{0x31d0, 0x0000, 0xFFFF, 0}, 
 //	{0x3088, 0x8050, 0xFFFF, 0}, //SEQ_CONTROL_PORT
 //	{0x3086, 0x9237, 0xFFFF, 0}, //SEQ_DATA_PORT
-	{0x3096, 0x0280, 0xFFFF, 0}, //RESERVED
-	{0x31e0, 0x0003, 0xFFFF, 0}, //PIX_DEF_ID
-	{0x30b0, 0x0028, 0xFFFF, 0}, //DIGITAL_TEST
-	{0x3f4c, 0x121f, 0xFFFF, 0}, //RESERVED
-	{0x3f4e, 0x121f, 0xFFFF, 0}, //RESERVED
-	{0x3f50, 0x0b81, 0xFFFF, 0}, //RESERVED
-	{0x3088, 0x81ba, 0xFFFF, 0}, //SEQ_CONTROL_PORT
-	{0x3086, 0x3d02, 0xFFFF, 0}, //SEQ_DATA_PORT
-	{0x3ed2, 0xfa96, 0xFFFF, 0}, //RESERVED
-	{0x3180, 0xfa96, 0xFFFF, 0}, //RESERVED
-	{0x3ecc, 0x0d42, 0xFFFF, 0}, //RESERVED
-	{0x30f0, 0x2283, 0xFFFF, 0}, //RESERVED
-	{0x3102, 0x5000, 0xFFFF, 0}, //AE_LUMA_TARGET
-	{0x3060, 0x0001, 0xFFFF, 0}, //ANALOG_GAIN
-	{0x30ba, 0x7626, 0xFFFF, 0}, 
+//	{0x3096, 0x0280, 0xFFFF, 0}, //RESERVED
+//	{0x31e0, 0x0003, 0xFFFF, 0}, //PIX_DEF_ID
+//	{0x30b0, 0x0028, 0xFFFF, 0}, //DIGITAL_TEST
+//	{0x3f4c, 0x121f, 0xFFFF, 0}, //RESERVED
+//	{0x3f4e, 0x121f, 0xFFFF, 0}, //RESERVED
+//	{0x3f50, 0x0b81, 0xFFFF, 0}, //RESERVED
+//	{0x3088, 0x81ba, 0xFFFF, 0}, //SEQ_CONTROL_PORT
+//	{0x3086, 0x3d02, 0xFFFF, 0}, //SEQ_DATA_PORT
+//	{0x3ed2, 0xfa96, 0xFFFF, 0}, //RESERVED
+//	{0x3180, 0xfa96, 0xFFFF, 0}, //RESERVED
+//	{0x3ecc, 0x0d42, 0xFFFF, 0}, //RESERVED
+//	{0x30f0, 0x2283, 0xFFFF, 0}, //RESERVED
+//	{0x3102, 0x5000, 0xFFFF, 0}, //AE_LUMA_TARGET
+//	{0x3060, 0x0001, 0xFFFF, 0}, //ANALOG_GAIN
+//	{0x30ba, 0x7626, 0xFFFF, 0}, 
 	{AR0234_TABLE_END, 0x0000, 0x0000, 0} //end config
 
 };
-
+*/
 
 static struct vvcam_mode_info_s ar0234_mode_info[] = {
         {
@@ -462,9 +503,8 @@ static int ar0234_set_exposure(struct star0234 *ar0234, u32 new_exp)
 {
 	int ret =  0;
 	//u16 real_exposure = 0;
-	u32 coarse_exp_time = 0;
+	u64 coarse_exp_time = 0;
 	u16 llp = 0;
-	u16 inv_row_time = 0;
 
 	printk("%s: Trying exposure value: %d", __func__, new_exp);
 	
@@ -476,17 +516,20 @@ static int ar0234_set_exposure(struct star0234 *ar0234, u32 new_exp)
 	}
 	else
 	{
-		// Computing inverse row_time (as row_time would be 0 because of integer stuff)
+		// Getting line length pck for new register exposure value.
 		ret = ar0234_read_reg(ar0234, LINE_LENGTH_PCK_REG, &llp);
 		if (ret != 0)
 		{
 			return -1;
 		}
 		
-		inv_row_time = AR0234_PIX_CLK/llp;
 		
 		// Computing COARSE INTEGRATION TIME register value. Time new_exp given in microseconds.
-		coarse_exp_time = inv_row_time * new_exp / 1000000;
+		coarse_exp_time = AR0234_PIX_CLK/1000000;
+		coarse_exp_time = coarse_exp_time * new_exp/ llp;
+		// Computing COARSE INTEGRATRION TIME register value. Time new_exp given in milliseconds.
+		//coarse_exp_time = new_exp * AR0234_PIX_CLK / (1000 * llp);
+		
 		
 		if (coarse_exp_time > (ar0234->format.width + ar0234->x_start - 1) )
 		{
@@ -518,7 +561,7 @@ static int ar0234_set_digital_gain(struct star0234 *priv,int val)
 	
 	if (gain < AR0234_MIN_GAIN || gain > AR0234_MAX_GAIN)
 	{
-		printk("%s: Gain value out of range, setting gain to maximum (1023)\n",__func__);
+		printk("%s: Gain value out of range, setting gain to maximum (%d)\n",__func__, AR0234_MAX_GAIN);
 		gain = AR0234_MAX_GAIN;
 	}
 	res = ar0234_write_reg(priv, DIGITAL_GAIN_REG, gain);
@@ -883,8 +926,6 @@ static int ar0234_set_fps(struct star0234 *ar0234, u32 fps)
 {
 	int ret = 0;
 	uint32_t real_fps = 0;
-	u32 reg_val = 0;
-	u16 fll = 0;
 
 	if (fps > ar0234->cur_mode.ae_info.max_fps) 
 	{
@@ -899,18 +940,23 @@ static int ar0234_set_fps(struct star0234 *ar0234, u32 fps)
 	real_fps = fps / 1024;
 	
 	// Obtaining frame lenght line from sensor register
-	ret = ar0234_read_reg(ar0234, FRAME_LENGTH_LINE_REG, &fll);
+	//ret = ar0234_read_reg(ar0234, FRAME_LENGTH_LINE_REG, &fll);
 	if (ret != 0)
 	{
 		return -1;
 	}
 
 	// Computing of value to be written in sensor register
+#if MASTER_MODE == 1
+
+	u32 reg_val = 0;
+	u16 fll = 0;
+	
 	reg_val = AR0234_PIX_CLK / (fll * real_fps);
 
-#ifdef DEBUG
+	#ifdef DEBUG
 	printk("%s: Try to set %d fps\n", __func__, real_fps);
-#endif
+	#endif
 
 	ret = ar0234_write_reg(ar0234, LINE_LENGTH_PCK_REG, (u16) reg_val);
 	if (ret != 0)
@@ -921,12 +967,14 @@ static int ar0234_set_fps(struct star0234 *ar0234, u32 fps)
 
 	// Adjusting exposure time (in microseconds) registers to new frame rate
 	
+	
 	reg_val = (AR0234_PIX_CLK/reg_val)*ar0234->ctrls.exposure->cur.val/1000000;
-#ifdef DEBUG
+	#ifdef DEBUG
 	printk("%s: COARSE_INTEGRATION_TIME gonna be: %d", __func__, reg_val);
-#endif
+	#endif
 	ret = ar0234_write_reg(ar0234, COARSE_INTEGRATION_TIME_REG, (u16) reg_val);
 	
+#endif
 	return ret;
 }
 
@@ -1091,6 +1139,9 @@ static int ar0234_power_on(struct star0234 *ar0234)
 {
 	int ret = 0;
 	printk("%s: enter \n", __func__);
+
+	ret = clk_prepare_enable(ar0234->sensor_clk);
+
 	/*
 	if(gpio_is_valid(ar0234->pwn_gpio))
 		gpio_set_value_cansleep(ar0234->pwn_gpio, 1);
@@ -1105,6 +1156,7 @@ static int ar0234_power_on(struct star0234 *ar0234)
 static int ar0234_power_off(struct star0234 *ar0234)
 {
 	printk("enter %s\n", __func__);
+	clk_disable_unprepare(ar0234->sensor_clk);
 	/*
 	if (gpio_is_valid(ar0234->pwn_gpio))
 		gpio_set_value_cansleep(ar0234->pwn_gpio, 0);
