@@ -72,6 +72,7 @@
 #define MASTER_MODE	    0
 
 
+
 #define DEBUG 1 //Comment this line for disabling DEBUG traces
 
 #ifdef CONFIG_HARDENED_USERCOPY
@@ -243,7 +244,7 @@ static const struct reg_8 ar0234_init_config[] = {
 */
 
 static struct vvcam_mode_info_s ar0234_mode_info[] = {
-        {
+	{
                 .index          = 0,
                 .size           = {
                         .bounds_width  = 1920,
@@ -262,7 +263,7 @@ static struct vvcam_mode_info_s ar0234_mode_info[] = {
                 .ae_info = {
                         .def_frm_len_lines     = 0x478,
                         .curr_frm_len_lines    = 0x478,
-                        .one_line_exp_time_ns  = 4385,
+                        .one_line_exp_time_ns  = 9260,
                         .max_integration_line  = 0x478 - 8,
                         .min_integration_line  = 1,
                         .max_again             = AR0234_MAX_ANALOG_GAIN * 1024,
@@ -282,6 +283,47 @@ static struct vvcam_mode_info_s ar0234_mode_info[] = {
                 .preg_data      = ar0234_init_setting,
                 .reg_data_count = ARRAY_SIZE(ar0234_init_setting),
 	},
+	// Config for being able to choose 2 different xml calib files.
+	{
+                .index          = 1,
+                .size           = {
+                        .bounds_width  = 1920,
+                        .bounds_height = 1080,
+                        .top           = 0,
+                        .left          = 0,
+                        .width         = 1920,
+                        .height        = 1080,
+                },
+                .hdr_mode       = SENSOR_MODE_LINEAR,
+                .bit_width      = 10,
+                .data_compress  = {
+                        .enable = 0,
+                },
+                .bayer_pattern  = BAYER_GRBG,
+                .ae_info = {
+                        .def_frm_len_lines     = 0x478,
+                        .curr_frm_len_lines    = 0x478,
+                        .one_line_exp_time_ns  = 9260,
+                        .max_integration_line  = 0x478 - 8,
+                        .min_integration_line  = 1,
+                        .max_again             = AR0234_MAX_ANALOG_GAIN * 1024,
+                        .min_again             = AR0234_MIN_ANALOG_GAIN    * 1024,
+                        .max_dgain             = AR0234_MAX_GAIN    * 1024,
+                        .min_dgain             = AR0234_MIN_GAIN    * 1024,
+                        .start_exposure        = 5000 * 1024,
+                        .cur_fps               = 10   * 1024,
+                        .max_fps               = 30   * 1024,
+                        .min_fps               = 1   * 1024,
+                        .min_afps              = 1   * 1024,
+                        .int_update_delay_frm  = 1,
+                        .gain_update_delay_frm = 1,
+                },
+                .mipi_info = {
+                        .mipi_lane = 2,},
+                .preg_data      = ar0234_init_setting,
+                .reg_data_count = ARRAY_SIZE(ar0234_init_setting),
+	},
+
 };
 
 
@@ -404,7 +446,10 @@ static int ar0234_set_exposure(struct star0234 *ar0234, u32 new_exp)
 static int ar0234_set_digital_gain(struct star0234 *priv,int val)
 {
         int res  = 0;
-        u16 gain = val / 1024;
+
+	/* NOTE: values coming from AE control are multiplied by 1024 */
+	u32 gain = val / 1024;
+
 #ifdef DEBUG
 	printk("%s: Trying to set %d gain\n", __func__, gain);
 #endif
@@ -413,7 +458,7 @@ static int ar0234_set_digital_gain(struct star0234 *priv,int val)
 		printk("%s: ERROR. Gain value out of range, setting gain to maximum (%d)\n",__func__, AR0234_MAX_GAIN);
 		gain = AR0234_MAX_GAIN;
 	}
-	res = ar0234_write_reg(priv, DIGITAL_GAIN_REG, gain);
+	res = ar0234_write_reg(priv, DIGITAL_GAIN_REG, (u16)gain);
 	
 	if (res <= -1)
 	{
@@ -871,6 +916,12 @@ static long ar0234_priv_ioctl(struct v4l2_subdev *sd,
 		case VVSENSORIOC_RESET:
 			ret = 0;
 			break;
+		case VIDIOC_G_FMT:
+			printk("%s: ME UTILIZAN PRIMO \n",__func__);
+			break;
+		case VIDIOC_S_FMT:
+			printk("%s: SARANDONGA \n", __func__);
+			break;
 		case VIDIOC_QUERYCAP:
 #ifdef DEBUG
 			printk("%s: Query capabilities", __func__);
@@ -911,6 +962,7 @@ static long ar0234_priv_ioctl(struct v4l2_subdev *sd,
 			break;
 		case VVSENSORIOC_S_GAIN: 
 			USER_TO_KERNEL(int);
+			printk("%s: RECIBIDA ESTA GANANCIA %d\n", __func__, *(int *)arg);
 			ret = ar0234_set_digital_gain(ar0234, *(int *)arg);
 			ret = 0;
 			break;
@@ -1104,8 +1156,10 @@ static int ar0234_get_format_code(struct star0234 *ar0234, u32 *code)
 		case BAYER_GRBG:
 			if (ar0234->cur_mode.bit_width == 8) {
 				*code = MEDIA_BUS_FMT_SGRBG8_1X8;
+				//*code = MEDIA_BUS_FMT_Y8_1X8;
 			} else if (ar0234->cur_mode.bit_width == 10) {
 				*code = MEDIA_BUS_FMT_SGRBG10_1X10;
+				//*code=MEDIA_BUS_FMT_Y10_1X10;
 			} else {
 				*code = MEDIA_BUS_FMT_SGRBG12_1X12;
 			}
@@ -1115,6 +1169,7 @@ static int ar0234_get_format_code(struct star0234 *ar0234, u32 *code)
 				*code = MEDIA_BUS_FMT_SGBRG8_1X8;
 			} else if (ar0234->cur_mode.bit_width == 10) {
 				*code = MEDIA_BUS_FMT_SGBRG10_1X10;
+				//*code = MEDIA_BUS_FMT_Y10_1X10;
 			} else {
 				*code = MEDIA_BUS_FMT_SGBRG12_1X12;
 			}
@@ -1167,6 +1222,7 @@ static int ar0234_enum_mbus_code(struct v4l2_subdev *sd,
 	struct star0234 *sensor = to_ar0234(sd);
 
 	u32 cur_code = MEDIA_BUS_FMT_SGRBG10_1X10;
+	//u32 cur_code = MEDIA_BUS_FMT_SGRBG12_1X12;
 
 #ifdef DEBUG
 	printk("%s\n", __func__);
@@ -1353,9 +1409,8 @@ static int ar0234_probe(struct i2c_client *client, const struct i2c_device_id *i
 #endif
 
   if ( clk_prepare_enable(ar0234->sensor_clk))
-  {
   	dev_err(&client->dev, "enable sensor clk fail");
-  }
+  
 
 #ifdef DEBUG
   printk("%s: clk_prepare_enable done\n", __func__);
@@ -1381,8 +1436,10 @@ static int ar0234_probe(struct i2c_client *client, const struct i2c_device_id *i
  // ar0234->format.width = ar0234->crop.width;
  // ar0234->format.height = ar0234->crop.height;
  // ar0234->format.field = V4L2_FIELD_NONE;
- // ar0234->format.code = MEDIA_BUS_FMT_SRGGB10_1X10;
- // ar0234->format.colorspace = V4L2_COLORSPACE_SRGB;
+// ar0234->format.code = MEDIA_BUS_FMT_Y10_1X10;
+   ar0234->format.code = MEDIA_BUS_FMT_SGRBG10_1X10; 
+   //ar0234->format.code = MEDIA_BUS_FMT_SGRBG12_1X12;
+   // ar0234->format.colorspace = V4L2_COLORSPACE_SRGB;
  // ar0234->frame_interval.numerator = 1;
  // ar0234->frame_interval.denominator = AR0234_DEF_FRAME_RATE;
  // ar0234->v_flip_init_done = 0;
