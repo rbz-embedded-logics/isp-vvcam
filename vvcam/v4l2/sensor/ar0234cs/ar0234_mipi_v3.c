@@ -36,7 +36,7 @@
 #define AR0234_TRIGGER_ENABLED_MODE 0x2958 //temp
 #define AR0234_MAX_EXPOSURE_TIME	10000
 #define AR0234_MIN_EXPOSURE_TIME	50
-#define AR0234_MAX_GAIN			65535
+#define AR0234_MAX_GAIN			2047
 #define AR0234_MIN_GAIN			150
 #define AR0234_DEF_GAIN			150
 #define AR0234_MAX_ANALOG_GAIN		15	
@@ -399,7 +399,7 @@ static int ar0234_set_exposure(struct star0234 *ar0234, u32 new_exp)
 	u16 llp = 0;
 
 #ifdef DEBUG
-	printk("%s: Trying exposure value: %d", __func__, new_exp);
+	printk("%s: Trying exposure value: %d \n", __func__, new_exp);
 #endif	
 
 	if(new_exp > AR0234_MAX_EXPOSURE_TIME)
@@ -423,7 +423,7 @@ static int ar0234_set_exposure(struct star0234 *ar0234, u32 new_exp)
 		
 		if (coarse_exp_time > (ar0234->format.width + ar0234->x_start - 1) )
 		{
-			printk("%s: ERROR. CIT value not valid for this resolution",__func__);
+			printk("%s: ERROR. CIT value not valid for this resolution\n",__func__);
 			return -1;
 		}
 			
@@ -868,7 +868,7 @@ static int ar0234_set_fps(struct star0234 *ar0234, u32 fps)
 	ret = ar0234_write_reg(ar0234, LINE_LENGTH_PCK_REG, (u16) reg_val);
 	if (ret != 0)
 	{
-		printk("%s: Failed to write new frame rate value (%d fps)", __func__, real_fps);
+		printk("%s: Failed to write new frame rate value (%d fps) \n", __func__, real_fps);
 		return -1;
 	}
 
@@ -878,7 +878,7 @@ static int ar0234_set_fps(struct star0234 *ar0234, u32 fps)
 	reg_val = (AR0234_PIX_CLK/reg_val)*ar0234->ctrls.exposure->cur.val/1000000;
 	
 #ifdef DEBUG
-	printk("%s: COARSE_INTEGRATION_TIME gonna be: %d", __func__, reg_val);
+	printk("%s: COARSE_INTEGRATION_TIME gonna be: %d \n", __func__, reg_val);
 #endif
 
     ret = ar0234_write_reg(ar0234, COARSE_INTEGRATION_TIME_REG, (u16) reg_val);
@@ -917,10 +917,8 @@ static long ar0234_priv_ioctl(struct v4l2_subdev *sd,
 			ret = 0;
 			break;
 		case VIDIOC_G_FMT:
-			printk("%s: ME UTILIZAN PRIMO \n",__func__);
 			break;
 		case VIDIOC_S_FMT:
-			printk("%s: SARANDONGA \n", __func__);
 			break;
 		case VIDIOC_QUERYCAP:
 #ifdef DEBUG
@@ -962,7 +960,6 @@ static long ar0234_priv_ioctl(struct v4l2_subdev *sd,
 			break;
 		case VVSENSORIOC_S_GAIN: 
 			USER_TO_KERNEL(int);
-			printk("%s: RECIBIDA ESTA GANANCIA %d\n", __func__, *(int *)arg);
 			ret = ar0234_set_digital_gain(ar0234, *(int *)arg);
 			ret = 0;
 			break;
@@ -989,9 +986,6 @@ static long ar0234_priv_ioctl(struct v4l2_subdev *sd,
 			ret = ar0234_get_fps(ar0234, arg);
 			break;
 		case VVSENSORIOC_S_STREAM:
-#ifdef DEBUG
-			printk("%s: VVSENSORIOC_S_STREAM\n", __func__);
-#endif
 			USER_TO_KERNEL(int);
 			ret = ar0234_s_stream(sd, *(int *)arg);
 			break;
@@ -1032,10 +1026,10 @@ static int ar0234_s_stream(struct v4l2_subdev *sd, int on) {
 	
 	struct star0234 *ar0234 = to_ar0234(sd); 
 	int ret = 0; 
-
+#ifdef DEBUG
   	printk("%s : %s\n", __func__, on ? "Stream Start" : "Stream Stop");
   	//mutex_lock(&ar0234->lock);
-	
+#endif
 	
   	if(on){
     		//A lo mejor meto un campo stream_status = enable, como con el sensor de omnivision de refrencia.
