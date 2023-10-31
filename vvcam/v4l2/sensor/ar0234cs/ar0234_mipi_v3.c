@@ -266,8 +266,8 @@ static struct vvcam_mode_info_s ar0234_mode_info[] = {
                         .one_line_exp_time_ns  = 9260,
                         .max_integration_line  = 0x478 - 8,
                         .min_integration_line  = 1,
-                        .max_again             = AR0234_MAX_ANALOG_GAIN * 1024,
-                        .min_again             = AR0234_MIN_ANALOG_GAIN    * 1024,
+                        .max_again             = AR0234_MIN_ANALOG_GAIN * 1024,
+                        .min_again             = AR0234_MIN_ANALOG_GAIN * 1024,
                         .max_dgain             = AR0234_MAX_GAIN    * 1024,
                         .min_dgain             = AR0234_MIN_GAIN    * 1024,
                         .start_exposure        = 5000 * 1024,
@@ -306,7 +306,7 @@ static struct vvcam_mode_info_s ar0234_mode_info[] = {
                         .one_line_exp_time_ns  = 9260,
                         .max_integration_line  = 0x478 - 8,
                         .min_integration_line  = 1,
-                        .max_again             = AR0234_MAX_ANALOG_GAIN * 1024,
+                        .max_again             = AR0234_MIN_ANALOG_GAIN * 1024,
                         .min_again             = AR0234_MIN_ANALOG_GAIN    * 1024,
                         .max_dgain             = AR0234_MAX_GAIN    * 1024,
                         .min_dgain             = AR0234_MIN_GAIN    * 1024,
@@ -471,6 +471,10 @@ static int ar0234_set_digital_gain(struct star0234 *priv,int val)
 static int ar0234_set_analog_gain(struct star0234 *ar0234, int val)
 {
   int res = 0;
+
+#ifdef DEBUG
+	printk("%s: Trying to set %d analog gain\n", __func__, val);
+#endif
   ar0234->analog_gain = val;
   res = ar0234_write_reg(ar0234, ANALOG_GAIN_REG, val);
   if (res >= 0)
