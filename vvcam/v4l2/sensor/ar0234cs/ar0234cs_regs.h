@@ -15,6 +15,7 @@ static struct vvcam_sccb_data_s ar0234_init_setting[] = {};
 #define DIGITAL_GAIN_REG             	0x305e
 #define ANALOG_GAIN_REG              	0x3060
 #define READ_MODE_REG                	0x3040
+#define IMAGE_ORIENTATION_REG           0x301d
 
 #define FRAME_LENGTH_LINE_REG		0x300A
 #define LINE_LENGTH_PCK_REG		0x300c

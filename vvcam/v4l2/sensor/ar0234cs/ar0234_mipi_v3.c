@@ -54,14 +54,18 @@
 
 #define AR0234_PIX_CLK			45000000
 
-#define AR0234_EXP_TIME_OUT_RANGE (-1)
+#define AR0234_OUT_RANGE (-1)
 
 #define V4L2_CID_ROI_H_POSITION         (V4L2_CID_DV_CLASS_BASE + 0x1000)
 #define V4L2_CID_ROI_V_POSITION         (V4L2_CID_DV_CLASS_BASE + 0x1001)
 #define V4L2_CID_FLASH_TIME             (V4L2_CID_DV_CLASS_BASE + 0x1002)
 #define V4L2_CID_ANALOG_GAIN            (V4L2_CID_DV_CLASS_BASE + 0x1003)
 #define V4L2_CID_ANALOG_FINE_GAIN   	(V4L2_CID_DV_CLASS_BASE + 0x1004)
-#define V4L2_CID2_GAIN      		(V4L2_CID_DV_CLASS_BASE + 0x1005)
+#define V4L2_CID2_GAIN      		    (V4L2_CID_DV_CLASS_BASE + 0x1005)
+#define V4L2_CID_MAX_GAIN      		    (V4L2_CID_DV_CLASS_BASE + 0x1006)
+#define V4L2_CID_MIN_GAIN      		    (V4L2_CID_DV_CLASS_BASE + 0x1007)
+#define V4L2_CID_MAX_EXPOSURE      		(V4L2_CID_DV_CLASS_BASE + 0x1008)
+#define V4L2_CID_MIN_EXPOSURE      		(V4L2_CID_DV_CLASS_BASE + 0x1009)
 
 #define SENSOR_CHANNEL_0    0
 #define SENSOR_CHANNEL_1    1
@@ -70,10 +74,6 @@
 #define SENSOR_MODEL_COLOR  1
 
 #define MASTER_MODE	    0
-
-
-
-#define DEBUG 1 //Comment this line for disabling DEBUG traces
 
 #ifdef CONFIG_HARDENED_USERCOPY
 #define client_to_ar0234(client)\
@@ -97,14 +97,21 @@
 #define KERNEL_TO_USER(TYPE)
 #endif
 
+/*#define DEBUG //Comment this line for disabling DEBUG traces*/
+
+enum {
+  VVSENSORIOC_S_MAX_GAIN = 0x200,
+  VVSENSORIOC_S_MIN_GAIN,
+  VVSENSORIOC_S_MAX_INT_TIME,
+  VVSENSORIOC_S_MIN_INT_TIME,
+  VVSENSORIOC_G_GAIN,
+  VVSENSORIOC_G_EXP
+};
 
 /* PRIVATE FUNCTIONS */
 static int ar0234_s_stream(struct v4l2_subdev *sd, int on);
 
 //end private functions
-
-
-
 
 static const struct regmap_config ar0234_regmap_config = {
         .reg_bits = 16,
@@ -124,6 +131,10 @@ struct ar0234_ctrls {
   struct v4l2_ctrl *analog_fine_gain; //a lo mejor se puede camuflar con la analog y juntarla
   struct v4l2_ctrl *vflip;
   struct v4l2_ctrl *hflip;
+  struct v4l2_ctrl *max_gain;
+  struct v4l2_ctrl *min_gain;
+  struct v4l2_ctrl *max_exposure;
+  struct v4l2_ctrl *min_exposure;
 };
 
 struct ar0234_capture_properties {
@@ -205,6 +216,7 @@ static const struct reg_8 ar0234_init_config[] = {
 
 };
 
+
 /* Con reloj externo a 50Mhz
 static const struct reg_8 ar0234_init_config[] = {
 	{0x301a, 0x2058, 0xFFFF, 0}, 
@@ -263,8 +275,8 @@ static struct vvcam_mode_info_s ar0234_mode_info[] = {
                 .ae_info = {
                         .def_frm_len_lines     = 0x478,
                         .curr_frm_len_lines    = 0x478,
-                        .one_line_exp_time_ns  = 9260,
-                        .max_integration_line  = 0x478 - 8,
+                        .one_line_exp_time_ns  = 1000,
+                        .max_integration_line  = 0x2918,
                         .min_integration_line  = 1,
                         .max_again             = AR0234_MIN_ANALOG_GAIN * 1024,
                         .min_again             = AR0234_MIN_ANALOG_GAIN * 1024,
@@ -272,7 +284,7 @@ static struct vvcam_mode_info_s ar0234_mode_info[] = {
                         .min_dgain             = AR0234_MIN_GAIN    * 1024,
                         .start_exposure        = 5000 * 1024,
                         .cur_fps               = 10   * 1024,
-                        .max_fps               = 30   * 1024,
+                        .max_fps               = 40   * 1024,
                         .min_fps               = 1   * 1024,
                         .min_afps              = 1   * 1024,
                         .int_update_delay_frm  = 1,
@@ -303,8 +315,8 @@ static struct vvcam_mode_info_s ar0234_mode_info[] = {
                 .ae_info = {
                         .def_frm_len_lines     = 0x478,
                         .curr_frm_len_lines    = 0x478,
-                        .one_line_exp_time_ns  = 9260,
-                        .max_integration_line  = 0x478 - 8,
+                        .one_line_exp_time_ns  = 1000,
+                        .max_integration_line  = 0x2918,
                         .min_integration_line  = 1,
                         .max_again             = AR0234_MIN_ANALOG_GAIN * 1024,
                         .min_again             = AR0234_MIN_ANALOG_GAIN    * 1024,
@@ -312,7 +324,47 @@ static struct vvcam_mode_info_s ar0234_mode_info[] = {
                         .min_dgain             = AR0234_MIN_GAIN    * 1024,
                         .start_exposure        = 5000 * 1024,
                         .cur_fps               = 10   * 1024,
-                        .max_fps               = 30   * 1024,
+                        .max_fps               = 40   * 1024,
+                        .min_fps               = 1   * 1024,
+                        .min_afps              = 1   * 1024,
+                        .int_update_delay_frm  = 1,
+                        .gain_update_delay_frm = 1,
+                },
+                .mipi_info = {
+                        .mipi_lane = 2,},
+                .preg_data      = ar0234_init_setting,
+                .reg_data_count = ARRAY_SIZE(ar0234_init_setting),
+	},
+
+	{
+                .index          = 2,
+                .size           = {
+                        .bounds_width  = 1400,
+                        .bounds_height = 1024,
+                        .top           = 0,
+                        .left          = 0,
+                        .width         = 1400,
+                        .height        = 1024,
+                },
+                .hdr_mode       = SENSOR_MODE_LINEAR,
+                .bit_width      = 10,
+                .data_compress  = {
+                        .enable = 0,
+                },
+                .bayer_pattern  = BAYER_GRBG,
+                .ae_info = {
+                        .def_frm_len_lines     = 0x478,
+                        .curr_frm_len_lines    = 0x478,
+                        .one_line_exp_time_ns  = 1000,
+                        .max_integration_line  = 0x2918,
+                        .min_integration_line  = 1,
+                        .max_again             = AR0234_MIN_ANALOG_GAIN * 1024,
+                        .min_again             = AR0234_MIN_ANALOG_GAIN * 1024,
+                        .max_dgain             = AR0234_MAX_GAIN    * 1024,
+                        .min_dgain             = AR0234_MIN_GAIN    * 1024,
+                        .start_exposure        = 5000 * 1024,
+                        .cur_fps               = 10   * 1024,
+                        .max_fps               = 40   * 1024,
                         .min_fps               = 1   * 1024,
                         .min_afps              = 1   * 1024,
                         .int_update_delay_frm  = 1,
@@ -390,7 +442,11 @@ static int ar0234_get_clk(struct star0234 *ar0234, void *clk)
 	return ret;
 }
 
-
+static int ar0234_get_exposure(struct star0234 *ar0234, u32 *exp)
+{
+  *(exp) = ar0234->ctrls.exposure->cur.val; 
+  return 0;
+}
 
 static int ar0234_set_exposure(struct star0234 *ar0234, u32 new_exp)
 {
@@ -402,47 +458,56 @@ static int ar0234_set_exposure(struct star0234 *ar0234, u32 new_exp)
 	printk("%s: Trying exposure value: %d \n", __func__, new_exp);
 #endif	
 
-	if(new_exp > AR0234_MAX_EXPOSURE_TIME)
+	if(new_exp > ar0234->cur_mode.ae_info.max_integration_line) 
+    {
+      printk("%s: ERROR. Exposure value out of range, setting exposure to maximum (%d)\n",__func__, ar0234->cur_mode.ae_info.max_integration_line);
+      new_exp = ar0234->cur_mode.ae_info.max_integration_line;
+    }        
+    
+    if (new_exp < ar0234->cur_mode.ae_info.min_integration_line)
 	{
-		printk("%s: ERROR. Exposure time out of range\n",__func__);
-		ret = AR0234_EXP_TIME_OUT_RANGE;
+      printk("%s: ERROR. Exposure value out of range, setting exposure to minimum (%d)\n",__func__, ar0234->cur_mode.ae_info.min_integration_line);
+      new_exp = ar0234->cur_mode.ae_info.min_integration_line;
 	}
-	else
-	{
-		// Getting line length pck for new register exposure value.
-		ret = ar0234_read_reg(ar0234, LINE_LENGTH_PCK_REG, &llp);
-		if (ret != 0)
-		{
-			return -1;
-		}
-		
-		
-		// Computing COARSE INTEGRATION TIME register value. Time new_exp given in microseconds.
-		coarse_exp_time = AR0234_PIX_CLK/1000000;
-		coarse_exp_time = coarse_exp_time * new_exp/ llp;
-		
-		if (coarse_exp_time > (ar0234->format.width + ar0234->x_start - 1) )
-		{
-			printk("%s: ERROR. CIT value not valid for this resolution\n",__func__);
-			return -1;
-		}
-			
-		ret = ar0234_write_reg(ar0234, COARSE_INTEGRATION_TIME_REG, (u16) coarse_exp_time);
-		if((ret >= 0))
-		{
-			ret = 0;
-			ar0234->ctrls.exposure->val = new_exp;
-			ar0234->ctrls.exposure->cur.val = new_exp;
-		}
-		else
-		{
-			printk("%s: ERROR. Value failed to write value\n",__func__);
-		}
-	}
+    // Getting line length pck for new register exposure value.
+    ret = ar0234_read_reg(ar0234, LINE_LENGTH_PCK_REG, &llp);
+    if (ret != 0)
+    {
+      return -1;
+    }
+
+
+    // Computing COARSE INTEGRATION TIME register value. Time new_exp given in microseconds.
+    coarse_exp_time = AR0234_PIX_CLK/1000000;
+    coarse_exp_time = coarse_exp_time * new_exp/ llp;
+
+    if (coarse_exp_time > (ar0234->format.width + ar0234->x_start - 1) )
+    {
+      printk("%s: ERROR. CIT value not valid for this resolution\n",__func__);
+      return -1;
+    }
+
+    ret = ar0234_write_reg(ar0234, COARSE_INTEGRATION_TIME_REG, (u16) coarse_exp_time);
+    if((ret >= 0))
+    {
+      ret = 0;
+      ar0234->ctrls.exposure->val = new_exp;
+      ar0234->ctrls.exposure->cur.val = new_exp;
+    }
+    else
+    {
+      printk("%s: ERROR. Value failed to write value\n",__func__);
+    }
+	
 	return ret;
 
 }
 
+static int ar0234_get_digital_gain(struct star0234 *priv,int *val)
+{
+  *(val) = priv->ctrls.gain->cur.val;
+  return 0;
+}
 static int ar0234_set_digital_gain(struct star0234 *priv,int val)
 {
         int res  = 0;
@@ -453,11 +518,20 @@ static int ar0234_set_digital_gain(struct star0234 *priv,int val)
 #ifdef DEBUG
 	printk("%s: Trying to set %d gain\n", __func__, gain);
 #endif
-	if (gain < AR0234_MIN_GAIN || gain > AR0234_MAX_GAIN)
+	if ( gain > priv->ctrls.max_gain->cur.val)
 	{
-		printk("%s: ERROR. Gain value out of range, setting gain to maximum (%d)\n",__func__, AR0234_MAX_GAIN);
-		gain = AR0234_MAX_GAIN;
+		printk("%s: ERROR. Gain value out of range, setting gain to maximum (%d)\n",__func__, priv->ctrls.max_gain->cur.val);
+		gain = priv->ctrls.max_gain->cur.val;
+        res = AR0234_OUT_RANGE;
 	}
+
+	if (gain < priv->ctrls.min_gain->cur.val)
+	{
+		printk("%s: ERROR. Gain value out of range, setting gain to minimum (%d)\n",__func__, priv->ctrls.min_gain->cur.val);
+		gain = priv->ctrls.min_gain->cur.val;
+        res = AR0234_OUT_RANGE;
+	}
+
 	res = ar0234_write_reg(priv, DIGITAL_GAIN_REG, (u16)gain);
 	
 	if (res <= -1)
@@ -465,7 +539,110 @@ static int ar0234_set_digital_gain(struct star0234 *priv,int val)
 		printk("%s: ERROR. Value failed to write value\n", __func__);
 	}
 	
+    if (res >= 0)
+    {
+      priv->ctrls.gain->val = gain;
+      priv->ctrls.gain->cur.val = gain;
+    }
 	return res;
+}
+
+static int ar0234_set_max_exposure(struct star0234 *ar0234, int in_val)
+{
+  int res = 0;
+  int val = in_val;
+
+#ifdef DEBUG
+  printk("%s: Trying to set %d max exposure\n", __func__, val);
+#endif
+
+  if((val >= AR0234_MIN_EXPOSURE_TIME) && (val <= AR0234_MAX_EXPOSURE_TIME))
+  {
+    ar0234->ctrls.max_exposure->val = val;
+    ar0234->ctrls.max_exposure->cur.val = val;
+    ar0234->cur_mode.ae_info.max_integration_line = val;
+#ifdef DEBUG
+    printk("%s: Set to %d \n", __func__, ar0234->cur_mode.ae_info.max_integration_line);
+#endif
+  } 
+  else
+  {
+    printk("%s: ERROR. Value failed to write set new value %d\n", __func__, val);
+  }
+  return res;
+}
+
+static int ar0234_set_min_exposure(struct star0234 *ar0234, int in_val)
+{
+  int res = 0;
+  int val = in_val;
+
+#ifdef DEBUG
+  printk("%s: Trying to set %d min exposure\n", __func__, val);
+#endif
+
+  if((val >= AR0234_MIN_EXPOSURE_TIME) && (val <= AR0234_MAX_EXPOSURE_TIME))
+  {
+    ar0234->ctrls.min_exposure->val = val;
+    ar0234->ctrls.min_exposure->cur.val = val;
+    ar0234->cur_mode.ae_info.min_integration_line = val;
+#ifdef DEBUG
+    printk("%s: Set to %d \n", __func__, ar0234->cur_mode.ae_info.min_integration_line);
+#endif
+  } 
+  else
+  {
+    printk("%s: ERROR. Value failed to write set new value %d\n", __func__, val);
+  }
+  return res;
+}
+
+static int ar0234_set_max_gain(struct star0234 *ar0234, int val)
+{
+  int res = 0;
+
+#ifdef DEBUG
+  printk("%s: Trying to set %d max gain\n", __func__, val);
+#endif
+
+  if((val >= AR0234_MIN_GAIN) && (val <= AR0234_MAX_GAIN))
+  {
+    ar0234->ctrls.max_gain->val = val;
+    ar0234->ctrls.max_gain->cur.val = val;
+    ar0234->cur_mode.ae_info.max_dgain = val * 1024;
+#ifdef DEBUG
+    printk("%s: Set to %d \n", __func__, ar0234->cur_mode.ae_info.max_dgain);
+#endif
+  } 
+  else
+  {
+    printk("%s: ERROR. Value failed to write set new value %d\n", __func__, val);
+  }
+  return res;
+}
+
+static int ar0234_set_min_gain(struct star0234 *ar0234, int val)
+{
+  int res = 0;
+
+#ifdef DEBUG
+	printk("%s: Trying to set %d min gain\n", __func__, val);
+#endif
+  
+  if((val >= AR0234_MIN_GAIN) && (val <= AR0234_MAX_GAIN))
+  {
+    ar0234->ctrls.min_gain->val = val;
+    ar0234->ctrls.min_gain->cur.val = val;
+    ar0234->cur_mode.ae_info.min_dgain = val * 1024;
+#ifdef DEBUG
+    printk("%s: Set to %d \n", __func__, ar0234->cur_mode.ae_info.min_dgain);
+#endif
+  } 
+  else
+  {
+	  printk("%s: ERROR. Value failed to write set new value %d\n", __func__, val);
+  }
+  return res;
 }
 
 static int ar0234_set_analog_gain(struct star0234 *ar0234, int val)
@@ -515,8 +692,8 @@ static int ar0234_set_h_pos(struct star0234 *ar0234, int new_h_pos)
 #endif
   
   ar0234->x_start = new_h_pos;
-  //ar0234_write_reg(ar0234, X_ADDR_START_REG, new_h_pos);
-  //ar0234_write_reg(ar0234, X_ADDR_END_REG, ar0234->format.width + new_h_pos - 1);
+  ar0234_write_reg(ar0234, X_ADDR_START_REG, new_h_pos);
+  ar0234_write_reg(ar0234, X_ADDR_END_REG, ar0234->format.width + new_h_pos - 1);
   return res;
 }
 
@@ -529,8 +706,8 @@ static int ar0234_set_v_pos(struct star0234 *ar0234, int new_v_pos)
 #endif
   
   ar0234->y_start = new_v_pos;
-  //ar0234_write_reg(ar0234, Y_ADDR_START_REG, new_v_pos);
-  //ar0234_write_reg(ar0234, Y_ADDR_END_REG, ar0234->format.height + new_v_pos - 1);
+  ar0234_write_reg(ar0234, Y_ADDR_START_REG, new_v_pos);
+  ar0234_write_reg(ar0234, Y_ADDR_END_REG, ar0234->format.height + new_v_pos - 1);
   return res;
 }
 
@@ -544,13 +721,13 @@ static int ar0234_set_v_flip(struct star0234 *ar0234, int v_flip)
   ar0234_read_reg(ar0234, READ_MODE_REG, &reg_read_mode);
   if(v_flip == 1)
   {
-    	//ar0234_write_reg(ar0234, READ_MODE_REG, reg_read_mode | (v_flip << 15));
-   	ar0234->v_flip_init_done = 1;
+    ar0234_write_reg(ar0234, READ_MODE_REG, reg_read_mode | (v_flip << 15));
+    ar0234->v_flip_init_done = 1;
   }
   else if(v_flip == 0)
   {
-    	//ar0234_write_reg(ar0234, READ_MODE_REG, reg_read_mode & ~(!v_flip << 15));
-  	ar0234->v_flip_init_done = 1;
+    ar0234_write_reg(ar0234, READ_MODE_REG, reg_read_mode & ~(!v_flip << 15));
+    ar0234->v_flip_init_done = 1;
   }
   else
   {
@@ -599,34 +776,45 @@ static int ar0234_s_ctrl(struct v4l2_ctrl *ctrl)
         struct star0234 *ar0234 = to_ar0234(sd);
         int ret = -EINVAL;
         
-        switch (ctrl->id) {                                                                          
-                case V4L2_CID_GAIN:                                                                  
-                        ret = ar0234_set_digital_gain(ar0234,ctrl->val);                             
-                        break;                                                                       
+        switch (ctrl->id) {
+                case V4L2_CID_GAIN:
+                        ret = ar0234_set_digital_gain(ar0234,ctrl->val);
+                        break;
                 case V4L2_CID_ANALOG_FINE_GAIN: 
-                        ret = ar0234_set_analog_fine_gain(ar0234, ctrl->val);                        
-                        break;                                                                       
-                case V4L2_CID_ANALOG_GAIN:                                                           
-                        ret = ar0234_set_analog_gain(ar0234, ctrl->val);                             
-                        break;                                                                       
-                case V4L2_CID_ROI_H_POSITION:                                                        
-                        ret = ar0234_set_h_pos(ar0234, ctrl->val);                                   
+                        ret = ar0234_set_analog_fine_gain(ar0234, ctrl->val);
                         break;
-                case V4L2_CID_ROI_V_POSITION:                                                        
-                        ret = ar0234_set_v_pos(ar0234, ctrl->val);                                   
+                case V4L2_CID_ANALOG_GAIN:
+                        ret = ar0234_set_analog_gain(ar0234, ctrl->val);
                         break;
-                case V4L2_CID_EXPOSURE:                                                              
-                        ret = ar0234_set_exposure(ar0234, ctrl->val);                                           
+                case V4L2_CID_ROI_H_POSITION:
+                        ret = ar0234_set_h_pos(ar0234, ctrl->val);
                         break;
-                case V4L2_CID_FLASH_TIME:                                                            
+                case V4L2_CID_ROI_V_POSITION:
+                        ret = ar0234_set_v_pos(ar0234, ctrl->val);
                         break;
-                case V4L2_CID_HFLIP:                                                                 
-                        ret = ar0234_set_h_flip(ar0234, ctrl->val);                                  
+                case V4L2_CID_EXPOSURE:
+                        ret = ar0234_set_exposure(ar0234, ctrl->val);
+                        break;
+                case V4L2_CID_FLASH_TIME:
+                        break;
+                case V4L2_CID_HFLIP:
+                        ret = ar0234_set_h_flip(ar0234, ctrl->val);
                         break;
                 case V4L2_CID_VFLIP:
-                        ret = ar0234_set_v_flip(ar0234,ctrl->val);                                   
-                        break;    
-					
+                        ret = ar0234_set_v_flip(ar0234,ctrl->val);
+                        break;
+                case V4L2_CID_MAX_GAIN:                                                           
+                        ret = ar0234_set_max_gain(ar0234, ctrl->val);                             
+                        break;
+                case V4L2_CID_MIN_GAIN:                                                           
+                        ret = ar0234_set_min_gain(ar0234, ctrl->val);                             
+                        break;
+                case V4L2_CID_MAX_EXPOSURE:
+                        ret = ar0234_set_max_exposure(ar0234, ctrl->val);
+                        break;
+                case V4L2_CID_MIN_EXPOSURE:
+                        ret = ar0234_set_min_exposure(ar0234, ctrl->val);
+                        break;
         }
         
         return 0; 
@@ -652,10 +840,21 @@ static int __ar0234_change_compose(struct star0234 *ar0234, struct v4l2_subdev_p
 static int ar0234_query_supports(struct star0234 *ar0234, void* parry)
 {
 	struct vvcam_mode_info_array_s *psensor_mode_arry = parry;
+    struct vvcam_mode_info_s mode_info_aux[3];
+
+    memcpy((void *)&mode_info_aux,(void *) &ar0234_mode_info, sizeof(ar0234_mode_info));
+
+    mode_info_aux[0].ae_info.max_dgain = ar0234->ctrls.max_gain->cur.val * 1024;
+    mode_info_aux[0].ae_info.min_dgain = ar0234->ctrls.min_gain->cur.val * 1024;
+    mode_info_aux[1].ae_info.max_dgain = ar0234->ctrls.max_gain->cur.val * 1024;
+    mode_info_aux[1].ae_info.min_dgain = ar0234->ctrls.min_gain->cur.val * 1024;
+    mode_info_aux[0].ae_info.max_integration_line = ar0234->ctrls.max_exposure->cur.val;
+    mode_info_aux[0].ae_info.min_integration_line = ar0234->ctrls.min_exposure->cur.val;
+    mode_info_aux[1].ae_info.max_integration_line = ar0234->ctrls.max_exposure->cur.val;
+    mode_info_aux[1].ae_info.min_integration_line = ar0234->ctrls.min_exposure->cur.val;
 
 	psensor_mode_arry->count = ARRAY_SIZE(ar0234_mode_info);
-	memcpy((void *)&psensor_mode_arry->modes, (void *)ar0234_mode_info, sizeof(ar0234_mode_info));
-
+	memcpy((void *)&psensor_mode_arry->modes, (void *)mode_info_aux, sizeof(ar0234_mode_info));
 	return 0;
 }
 
@@ -691,45 +890,43 @@ static int ar0234_write_table(struct star0234 *priv, const struct reg_8 table[])
 
 }
 
-
-
 static int ar0234_set_fmt(struct v4l2_subdev *sd, struct v4l2_subdev_state *state, struct v4l2_subdev_format *format) 
 { 
 	struct v4l2_mbus_framefmt *fmt = &format->format; 
 	struct star0234 *ar0234 = to_ar0234(sd); 
-	int ret = 0;
+    int ret = 0;
 
-    	mutex_lock(&ar0234->lock);
+    mutex_lock(&ar0234->lock);
 
-	if ((fmt->width != ar0234->cur_mode.size.bounds_width) ||
-			(fmt->height != ar0234->cur_mode.size.bounds_height)) {
-		pr_err("%s:set sensor format %dx%d error\n",
-				__func__,fmt->width,fmt->height);
-		mutex_unlock(&ar0234->lock);
-		return -EINVAL;
-	}
+    /*if ((fmt->width != ar0234->cur_mode.size.bounds_width) ||*/
+    /*(fmt->height != ar0234->cur_mode.size.bounds_height)) {*/
+    /*pr_err("%s:set sensor format %dx%d error\n",*/
+    /*__func__,fmt->width,fmt->height);*/
+    /*mutex_unlock(&ar0234->lock);*/
+    /*return -EINVAL;*/
+    /*}*/
+    ar0234->cur_mode.size.bounds_width = fmt->width;
+    ar0234->cur_mode.size.bounds_height = fmt->height;
+    ar0234->cur_mode.size.width = fmt->width;
+    ar0234->cur_mode.size.height = fmt->height;
+    fmt->field = V4L2_FIELD_NONE; 
 
-    	fmt->field = V4L2_FIELD_NONE; 
 
+    if((fmt->width + ar0234->x_start - 1) > AR0234_MAX_WIDTH) {
+      ar0234_write_reg(ar0234, X_ADDR_START_REG, 0);
+      ar0234->x_start = AR0234_MAX_WIDTH - fmt->width;
+      printk("%s ERROR. La imagen se pasa de ancho, cambiar ROI\n",__func__);
+    }
 
-	if((fmt->width + ar0234->x_start - 1) > AR0234_MAX_WIDTH) {
-        	ar0234_write_reg(ar0234, X_ADDR_START_REG, 0);
-            	ar0234->x_start = AR0234_MAX_WIDTH - fmt->width;
-            	printk("%s ERROR. La imagen se pasa de ancho, cambiar ROI\n",__func__);
-    	}
+    if((fmt->height + ar0234->y_start - 1) > AR0234_MAX_HEIGHT) {
+      ar0234_write_reg(ar0234, Y_ADDR_START_REG, 0);
+      ar0234->y_start = AR0234_MAX_HEIGHT - fmt->height;
+      printk("%s ERROR. La imagen se pasa de alto, cambiar ROI\n", __func__);
+    }
 
-    	if((fmt->height + ar0234->y_start - 1) > AR0234_MAX_HEIGHT) {
-            	ar0234_write_reg(ar0234, Y_ADDR_START_REG, 0);
-            	ar0234->y_start = AR0234_MAX_HEIGHT - fmt->height;
-            	printk("%s ERROR. La imagen se pasa de alto, cambiar ROI\n", __func__);
-    	}
-	
-    	//ar0234_write_reg(ar0234, X_ADDR_END_REG, (fmt->width + ar0234->x_start -1));
-    	//ar0234_write_reg(ar0234, Y_ADDR_END_REG,(fmt->height + ar0234->y_start - 1));
+    ar0234_write_reg(ar0234, X_ADDR_END_REG, (fmt->width + ar0234->x_start -1));
+    ar0234_write_reg(ar0234, Y_ADDR_END_REG,(fmt->height + ar0234->y_start - 1));
 
-	//ret = ar0234_write_reg_arry(ar0234,
-	//		(struct vvcam_sccb_data_s *)ar0234->cur_mode.preg_data,
-	//		ar0234->cur_mode.reg_data_count);
 	if (ret < 0) {
 		pr_err("%s:ar0234_write_reg_arry error\n",__func__);
 		mutex_unlock(&ar0234->lock);
@@ -776,8 +973,22 @@ static int ar0234_query_capabilities(struct star0234 *ar0234, void *arg)
 static int ar0234_get_sensor_mode(struct star0234 *ar0234, void* pmode)
 {
 	int ret = 0;
+#ifdef DEBUG
+    printk("%s: csi%d\n", __func__, ar0234->csi_id);
+#endif
+    ar0234->cur_mode.ae_info.max_dgain = ar0234->ctrls.max_gain->cur.val * 1024;
+    ar0234->cur_mode.ae_info.min_dgain = ar0234->ctrls.min_gain->cur.val * 1024;
+    ar0234->cur_mode.ae_info.max_integration_line = ar0234->ctrls.max_exposure->cur.val;
+    ar0234->cur_mode.ae_info.min_integration_line = ar0234->ctrls.min_exposure->cur.val;
+#ifdef DEBUG
+    printk("%s: max_dgain = %d\n", __func__, ar0234->cur_mode.ae_info.max_dgain);
+    printk("%s: min_dgain = %d\n", __func__, ar0234->cur_mode.ae_info.min_dgain);
+    printk("%s: max_exposure = %d\n", __func__, ar0234->cur_mode.ae_info.max_integration_line);
+    printk("%s: min_exposure = %d\n", __func__, ar0234->cur_mode.ae_info.min_integration_line);
+#endif
 	ret = copy_to_user(pmode, &ar0234->cur_mode,
 			sizeof(struct vvcam_mode_info_s));
+
 	if (ret != 0)
 		ret = -ENOMEM;
 	return ret;
@@ -788,6 +999,12 @@ static int ar0234_set_sensor_mode(struct star0234 *ar0234, void* pmode)
 	int ret = 0;
 	int i = 0;
 	struct vvcam_mode_info_s sensor_mode;
+    int width = ar0234->cur_mode.size.width; 
+    int height = ar0234->cur_mode.size.height; 
+
+#ifdef DEBUG
+    printk("%s: csi%d\n", __func__, ar0234->csi_id);
+#endif
 	ret = copy_from_user(&sensor_mode, pmode,
 			sizeof(struct vvcam_mode_info_s));
 	if (ret != 0)
@@ -796,6 +1013,14 @@ static int ar0234_set_sensor_mode(struct star0234 *ar0234, void* pmode)
 		if (ar0234_mode_info[i].index == sensor_mode.index) {
 			memcpy(&ar0234->cur_mode, &ar0234_mode_info[i],
 					sizeof(struct vvcam_mode_info_s));
+            ar0234->cur_mode.ae_info.max_dgain = ar0234->ctrls.max_gain->cur.val * 1024;
+            ar0234->cur_mode.ae_info.min_dgain = ar0234->ctrls.min_gain->cur.val * 1024;
+            ar0234->cur_mode.ae_info.max_integration_line = ar0234->ctrls.max_exposure->cur.val;
+            ar0234->cur_mode.ae_info.min_integration_line = ar0234->ctrls.min_exposure->cur.val;
+            ar0234->cur_mode.size.width = width;
+            ar0234->cur_mode.size.height = height;
+            ar0234->cur_mode.size.bounds_width = width;
+            ar0234->cur_mode.size.bounds_height = height;
 			return 0;
 		}
 	}
@@ -930,18 +1155,18 @@ static long ar0234_priv_ioctl(struct v4l2_subdev *sd,
 #endif
             ret = ar0234_query_capabilities(ar0234, arg);
 			break;
-        	case VVSENSORIOC_QUERY:
-			USER_TO_KERNEL(struct vvcam_mode_info_array_s);
+        case VVSENSORIOC_QUERY:
+            USER_TO_KERNEL(struct vvcam_mode_info_array_s);
 #ifdef DEBUG
-			printk("%s: Query support",__func__);
+            printk("%s: Query support",__func__);
 #endif
             ret = ar0234_query_supports(ar0234, arg);
-			KERNEL_TO_USER(struct vvcam_mode_info_array_s);
-			break;
-       		case VVSENSORIOC_WRITE_REG:
-			ret = copy_from_user(&sensor_reg, arg,
-					sizeof(struct vvcam_sccb_data_s));
-			break;
+            KERNEL_TO_USER(struct vvcam_mode_info_array_s);
+            break;
+        case VVSENSORIOC_WRITE_REG:
+            ret = copy_from_user(&sensor_reg, arg,
+                sizeof(struct vvcam_sccb_data_s));
+            break;
 		case VVSENSORIOC_READ_REG:
 			ret = copy_from_user(&sensor_reg, arg,
 					sizeof(struct vvcam_sccb_data_s));
@@ -957,6 +1182,9 @@ static long ar0234_priv_ioctl(struct v4l2_subdev *sd,
 			ret = ar0234_get_reserve_id(ar0234, arg);
 			break;
 		case VVSENSORIOC_G_SENSOR_MODE:
+#ifdef DEBUG
+			printk("%s: VVSENSORIOC_G_SENSOR_MODE",__func__);
+#endif
 			ret = ar0234_get_sensor_mode(ar0234, arg);
 			break;
 		case VVSENSORIOC_S_SENSOR_MODE:
@@ -967,6 +1195,9 @@ static long ar0234_priv_ioctl(struct v4l2_subdev *sd,
 			ret = ar0234_set_digital_gain(ar0234, *(int *)arg);
 			ret = 0;
 			break;
+        case VVSENSORIOC_G_GAIN:
+            ret = ar0234_get_digital_gain(ar0234, arg);
+            break;
 		case VVSENSORIOC_S_VSGAIN:
 			ret = 0;
 			break;
@@ -976,6 +1207,9 @@ static long ar0234_priv_ioctl(struct v4l2_subdev *sd,
 			ret = ar0234_set_exposure(ar0234, *(int *)arg);
 			ret = 0;
 			break;
+        case VVSENSORIOC_G_EXP:
+            ret = ar0234_get_exposure(ar0234, arg);
+            break;
 		case VVSENSORIOC_S_VSEXP:
 			ret = 0;
 			break;
@@ -990,6 +1224,9 @@ static long ar0234_priv_ioctl(struct v4l2_subdev *sd,
 			ret = ar0234_get_fps(ar0234, arg);
 			break;
 		case VVSENSORIOC_S_STREAM:
+#ifdef DEBUG
+			printk("%s: IOCTL VVSENSORIOC_S_STREAM called successfully\n",__func__);
+#endif
 			USER_TO_KERNEL(int);
 			ret = ar0234_s_stream(sd, *(int *)arg);
 			break;
@@ -1014,6 +1251,26 @@ static long ar0234_priv_ioctl(struct v4l2_subdev *sd,
 		case VVSENSORIOC_S_TEST_PATTERN:
 			ret = 0;
 			break;
+        case VVSENSORIOC_S_MAX_GAIN:
+			printk("%s: IOCTL VVSENSORIOC_S_MAX_GAIN called successfully, arg_value: %d\n",__func__, *(int *)arg);
+			USER_TO_KERNEL(int);
+            ret = ar0234_set_max_gain(ar0234, *(int *)arg);
+            break;
+        case VVSENSORIOC_S_MIN_GAIN:
+			printk("%s: IOCTL VVSENSORIOC_S_MIN_GAIN called successfully, arg_value: %d\n",__func__, *(int *)arg);
+			USER_TO_KERNEL(int);
+            ret = ar0234_set_min_gain(ar0234, *(int *)arg);
+            break;
+        case VVSENSORIOC_S_MAX_INT_TIME:
+			printk("%s: IOCTL VVSENSORIOC_S_MAX_INT_TIME called successfully, arg_value: %d\n",__func__, *(int *)arg);
+			USER_TO_KERNEL(int);
+            ret = ar0234_set_max_exposure(ar0234, *(int *)arg);
+            break;
+        case VVSENSORIOC_S_MIN_INT_TIME:
+			printk("%s: IOCTL VVSENSORIOC_S_MIN_INT_TIME called successfully, arg_value: %d\n",__func__, *(int *)arg);
+			USER_TO_KERNEL(int);
+            ret = ar0234_set_min_exposure(ar0234, *(int *)arg);
+            break;
 		default:
 			ret = -EINVAL;
 			break;
@@ -1313,8 +1570,49 @@ static const struct v4l2_ctrl_config ar0234_ctrl_analog_fine_gain = {
         .def = 0,
 };
 
+static const struct v4l2_ctrl_config ar0234_ctrl_max_gain = {
+        .ops = &ar0234_ctrl_ops,
+        .id = V4L2_CID_MAX_GAIN,
+        .name = "Maximum gain",
+        .type = V4L2_CTRL_TYPE_INTEGER,
+        .min = AR0234_MIN_GAIN,
+        .max = AR0234_MAX_GAIN,
+        .step = 1,
+        .def = AR0234_MAX_GAIN,
+};
 
+static const struct v4l2_ctrl_config ar0234_ctrl_min_gain = {
+        .ops = &ar0234_ctrl_ops,
+        .id = V4L2_CID_MIN_GAIN,
+        .name = "Minimum gain",
+        .type = V4L2_CTRL_TYPE_INTEGER,
+        .min = AR0234_MIN_GAIN,
+        .max = AR0234_MAX_GAIN,
+        .step = 1,
+        .def = AR0234_MIN_GAIN,
+};
 
+static const struct v4l2_ctrl_config ar0234_ctrl_max_exposure = {
+        .ops = &ar0234_ctrl_ops,
+        .id = V4L2_CID_MAX_EXPOSURE,
+        .name = "Maximum exposure time",
+        .type = V4L2_CTRL_TYPE_INTEGER,
+        .min = AR0234_MIN_EXPOSURE_TIME,
+        .max = AR0234_MAX_EXPOSURE_TIME,
+        .step = 1,
+        .def = AR0234_MAX_EXPOSURE_TIME,
+};
+
+static const struct v4l2_ctrl_config ar0234_ctrl_min_exposure = {
+        .ops = &ar0234_ctrl_ops,
+        .id = V4L2_CID_MIN_EXPOSURE,
+        .name = "Minimum exposure time",
+        .type = V4L2_CTRL_TYPE_INTEGER,
+        .min = AR0234_MIN_EXPOSURE_TIME,
+        .max = AR0234_MAX_EXPOSURE_TIME,
+        .step = 1,
+        .def = AR0234_MIN_EXPOSURE_TIME,
+};
 
 static const struct of_device_id ar0234_of_id_table[] = {
         { .compatible = "on,ar0234cs" },
@@ -1553,6 +1851,23 @@ static int ar0234_probe(struct i2c_client *client, const struct i2c_device_id *i
       V4L2_CID_VFLIP, 0, 1, 1, 0);
 
   /* add user controls */
+  ar0234->ctrls.max_gain = v4l2_ctrl_new_custom(
+      &ar0234->ctrls.handler,
+      &ar0234_ctrl_max_gain,
+      NULL);
+  ar0234->ctrls.min_gain = v4l2_ctrl_new_custom(
+      &ar0234->ctrls.handler,
+      &ar0234_ctrl_min_gain,
+      NULL);
+
+  ar0234->ctrls.max_exposure = v4l2_ctrl_new_custom(
+      &ar0234->ctrls.handler,
+      &ar0234_ctrl_max_exposure,
+      NULL);
+  ar0234->ctrls.min_exposure = v4l2_ctrl_new_custom(
+      &ar0234->ctrls.handler,
+      &ar0234_ctrl_min_exposure,
+      NULL);
   ar0234->ctrls.h_pos = v4l2_ctrl_new_custom(&ar0234->ctrls.handler,
       &ar0234_ctrl_roi_h_position, NULL);
   ar0234->ctrls.v_pos = v4l2_ctrl_new_custom(&ar0234->ctrls.handler,
