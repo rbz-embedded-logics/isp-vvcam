@@ -169,6 +169,7 @@ struct star0234 {
   unsigned int xclk_source;
   unsigned int pwn_gpio;
   unsigned int rst_gpio;
+  vvcam_lens_t focus_lens;
 };
 
 struct reg_8 {
@@ -1116,6 +1117,21 @@ static int ar0234_set_fps(struct star0234 *ar0234, u32 fps)
 	return ret;
 }
 
+static int ar0234cs_get_lens(struct star0234 *sensor, void * arg) {
+
+	vvcam_lens_t *pfocus_lens = (vvcam_lens_t *)arg;
+    printk("%s\n", __func__);
+
+	if (!arg)
+		return -ENOMEM;
+
+	if (strlen(sensor->focus_lens.name) == 0)
+		return -1;
+
+    printk("%s: returning data\n", __func__);
+	return copy_to_user(pfocus_lens, &sensor->focus_lens, sizeof(vvcam_lens_t));
+}
+
 static long ar0234_priv_ioctl(struct v4l2_subdev *sd,	                  
     		unsigned int cmd,
 		void *arg_user)
@@ -1271,6 +1287,10 @@ static long ar0234_priv_ioctl(struct v4l2_subdev *sd,
 			USER_TO_KERNEL(int);
             ret = ar0234_set_min_exposure(ar0234, *(int *)arg);
             break;
+	    case VVSENSORIOC_G_LENS:
+			printk("%s: IOCTL VVSENSORIOC_G_LENS called successfully, arg_value: %d\n",__func__, *(int *)arg);
+		    ret = ar0234cs_get_lens(ar0234, arg);
+		    break;
 		default:
 			ret = -EINVAL;
 			break;
@@ -1381,7 +1401,6 @@ static int ar0234_reset(struct star0234 *ar0234)
 
 	return 0;
 }
-
 
 static int ar0234_link_setup(struct media_entity *entity,
 		struct media_pad const *local,
@@ -1638,6 +1657,7 @@ static int ar0234_probe(struct i2c_client *client, const struct i2c_device_id *i
   struct device *dev = &client->dev;
   __u64 mpf = 0;
   struct device_node *ep;
+  char lens_name[64]={0};
 
 #ifdef DEBUG
   printk("%s: Starting AR0234 module with trigger :) ...\n", __func__);
@@ -1695,6 +1715,9 @@ static int ar0234_probe(struct i2c_client *client, const struct i2c_device_id *i
     ar0234->sensor_model = SENSOR_MODEL_MONO;
   }
   ar0234->csi_id = ar0234->sensor_model;
+  sprintf(lens_name, "optic%d", ar0234->csi_id);
+  memcpy(ar0234->focus_lens.name, lens_name, strlen(lens_name));
+  ar0234->focus_lens.id = ar0234->csi_id;
 
   ar0234->sensor_clk = devm_clk_get(&client->dev, "xclk");
   //ar0234->sensor_clk->mclk = 50000000;
@@ -1744,7 +1767,7 @@ static int ar0234_probe(struct i2c_client *client, const struct i2c_device_id *i
  // ar0234->y_start = 8;
  // ar0234->analog_gain = AR0234_DEF_ANALOG_GAIN;
  // ar0234->analog_fine_gain = AR0234_DEF_ANALOG_FINE_GAIN; 
-  
+ 
   if (ar0234_power_on(ar0234) < 0)
   {
   	printk("%s: sensor power on fail\n",__func__);
