@@ -105,7 +105,9 @@ enum {
   VVSENSORIOC_S_MAX_INT_TIME,
   VVSENSORIOC_S_MIN_INT_TIME,
   VVSENSORIOC_G_GAIN,
-  VVSENSORIOC_G_EXP
+  VVSENSORIOC_G_EXP,
+  VVSENSORIOC_S_V_FLIP,
+  VVSENSORIOC_S_H_FLIP
 };
 
 /* PRIVATE FUNCTIONS */
@@ -751,6 +753,8 @@ static int ar0234_set_v_flip(struct star0234 *ar0234, int v_flip)
 
   if(res == 0)
   {
+    ar0234->ctrls.vflip->cur.val = v_flip;
+    ar0234->ctrls.vflip->val = v_flip;
     ar0234_write_reg(ar0234, READ_MODE_REG, out_read_mode);
   }
 
@@ -797,6 +801,8 @@ static int ar0234_set_h_flip(struct star0234 *ar0234, int h_flip)
 
   if(res == 0)
   {
+    ar0234->ctrls.hflip->cur.val = h_flip;
+    ar0234->ctrls.hflip->val = h_flip;
     ar0234_write_reg(ar0234, READ_MODE_REG, out_read_mode);
   }
 
@@ -1202,16 +1208,10 @@ static long ar0234_priv_ioctl(struct v4l2_subdev *sd,
 		case VIDIOC_S_FMT:
 			break;
 		case VIDIOC_QUERYCAP:
-#ifdef DEBUG
-			printk("%s: Query capabilities", __func__);
-#endif
             ret = ar0234_query_capabilities(ar0234, arg);
 			break;
         case VVSENSORIOC_QUERY:
             USER_TO_KERNEL(struct vvcam_mode_info_array_s);
-#ifdef DEBUG
-            printk("%s: Query support",__func__);
-#endif
             ret = ar0234_query_supports(ar0234, arg);
             KERNEL_TO_USER(struct vvcam_mode_info_array_s);
             break;
@@ -1234,9 +1234,6 @@ static long ar0234_priv_ioctl(struct v4l2_subdev *sd,
 			ret = ar0234_get_reserve_id(ar0234, arg);
 			break;
 		case VVSENSORIOC_G_SENSOR_MODE:
-#ifdef DEBUG
-			printk("%s: VVSENSORIOC_G_SENSOR_MODE",__func__);
-#endif
 			ret = ar0234_get_sensor_mode(ar0234, arg);
 			break;
 		case VVSENSORIOC_S_SENSOR_MODE:
@@ -1255,7 +1252,6 @@ static long ar0234_priv_ioctl(struct v4l2_subdev *sd,
 			break;
 		case VVSENSORIOC_S_EXP:
 			USER_TO_KERNEL(u32); 
-			//ret = ar0234_write_reg(sensor, AR0234_COARSE_INTEGRATION_TIME, 0x01fc); 
 			ret = ar0234_set_exposure(ar0234, *(int *)arg);
 			ret = 0;
 			break;
@@ -1267,18 +1263,12 @@ static long ar0234_priv_ioctl(struct v4l2_subdev *sd,
 			break;
 		case VVSENSORIOC_S_FPS:	
 			USER_TO_KERNEL(int);
-#ifdef DEBUG
-			printk("%s: IOCTL VVSENSORIOC_S_FPS called successfully, arg_value: %d\n",__func__, *(int *)arg);
-#endif
             ret = ar0234_set_fps(ar0234, *(int *)arg); 
 			break;
 		case VVSENSORIOC_G_FPS:
 			ret = ar0234_get_fps(ar0234, arg);
 			break;
 		case VVSENSORIOC_S_STREAM:
-#ifdef DEBUG
-			printk("%s: IOCTL VVSENSORIOC_S_STREAM called successfully\n",__func__);
-#endif
 			USER_TO_KERNEL(int);
 			ret = ar0234_s_stream(sd, *(int *)arg);
 			break;
@@ -1304,29 +1294,32 @@ static long ar0234_priv_ioctl(struct v4l2_subdev *sd,
 			ret = 0;
 			break;
         case VVSENSORIOC_S_MAX_GAIN:
-			printk("%s: IOCTL VVSENSORIOC_S_MAX_GAIN called successfully, arg_value: %d\n",__func__, *(int *)arg);
 			USER_TO_KERNEL(int);
             ret = ar0234_set_max_gain(ar0234, *(int *)arg);
             break;
         case VVSENSORIOC_S_MIN_GAIN:
-			printk("%s: IOCTL VVSENSORIOC_S_MIN_GAIN called successfully, arg_value: %d\n",__func__, *(int *)arg);
 			USER_TO_KERNEL(int);
             ret = ar0234_set_min_gain(ar0234, *(int *)arg);
             break;
         case VVSENSORIOC_S_MAX_INT_TIME:
-			printk("%s: IOCTL VVSENSORIOC_S_MAX_INT_TIME called successfully, arg_value: %d\n",__func__, *(int *)arg);
 			USER_TO_KERNEL(int);
             ret = ar0234_set_max_exposure(ar0234, *(int *)arg);
             break;
         case VVSENSORIOC_S_MIN_INT_TIME:
-			printk("%s: IOCTL VVSENSORIOC_S_MIN_INT_TIME called successfully, arg_value: %d\n",__func__, *(int *)arg);
 			USER_TO_KERNEL(int);
             ret = ar0234_set_min_exposure(ar0234, *(int *)arg);
             break;
 	    case VVSENSORIOC_G_LENS:
-			printk("%s: IOCTL VVSENSORIOC_G_LENS called successfully, arg_value: %d\n",__func__, *(int *)arg);
 		    ret = ar0234cs_get_lens(ar0234, arg);
 		    break;
+        case VVSENSORIOC_S_V_FLIP:
+            USER_TO_KERNEL(int);
+            ret = ar0234_set_v_flip(ar0234, *(int *)arg);
+            break;
+        case VVSENSORIOC_S_H_FLIP:
+            USER_TO_KERNEL(int);
+            ret = ar0234_set_h_flip(ar0234, *(int *)arg);
+            break;
 		default:
 			ret = -EINVAL;
 			break;
