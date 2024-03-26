@@ -716,19 +716,18 @@ static int ar0234_set_v_flip(struct star0234 *ar0234, int v_flip)
 {
   uint16_t reg_read_mode = 0;
   int res = 0;
-  
-
+  uint16_t out_read_mode = 0;
 
   ar0234_read_reg(ar0234, READ_MODE_REG, &reg_read_mode);
   if(v_flip == 1)
   {
-    ar0234_write_reg(ar0234, READ_MODE_REG, reg_read_mode | (v_flip << 15));
-    ar0234->v_flip_init_done = 1;
+        reg_read_mode = reg_read_mode | (v_flip << 14);
+    	ar0234->v_flip_init_done = 1;
   }
   else if(v_flip == 0)
   {
-    ar0234_write_reg(ar0234, READ_MODE_REG, reg_read_mode & ~(!v_flip << 15));
-    ar0234->v_flip_init_done = 1;
+        reg_read_mode = reg_read_mode & ~(!v_flip << 14);
+    	ar0234->v_flip_init_done = 1;
   }
   else
   {
@@ -736,6 +735,24 @@ static int ar0234_set_v_flip(struct star0234 *ar0234, int v_flip)
     printk("%s: invalid flip value\n", __func__);
   }
 
+  if(ar0234->ctrls.hflip->cur.val == 1)
+  {
+    out_read_mode = reg_read_mode | (ar0234->ctrls.hflip->cur.val << 15);
+  }
+  else if(ar0234->ctrls.hflip->cur.val == 0)
+  {
+    out_read_mode = reg_read_mode & ~(!ar0234->ctrls.hflip->cur.val << 15);
+  }
+  else
+  {
+    res = -1;
+    printk("%s: invalid flip value\n", __func__);
+  }
+
+  if(res == 0)
+  {
+    ar0234_write_reg(ar0234, READ_MODE_REG, out_read_mode);
+  }
 
   return res;
 }
@@ -745,16 +762,17 @@ static int ar0234_set_h_flip(struct star0234 *ar0234, int h_flip)
 {
   uint16_t reg_read_mode = 0;
   int res = 0;
+  uint16_t out_read_mode = 0;
 
   ar0234_read_reg(ar0234, READ_MODE_REG, &reg_read_mode);
   if(h_flip == 1)
   {
-    	//ar0234_write_reg(ar0234, READ_MODE_REG, reg_read_mode | (h_flip << 14));
+        reg_read_mode = reg_read_mode | (h_flip << 14);
     	ar0234->h_flip_init_done = 1;
   }
   else if(h_flip == 0)
   {
-    	//ar0234_write_reg(ar0234, READ_MODE_REG, reg_read_mode & ~(!h_flip << 14));
+        reg_read_mode = reg_read_mode & ~(!h_flip << 14);
     	ar0234->h_flip_init_done = 1;
   }
   else
@@ -763,6 +781,24 @@ static int ar0234_set_h_flip(struct star0234 *ar0234, int h_flip)
     printk("%s: invalid flip value\n", __func__);
   }
 
+  if(ar0234->ctrls.vflip->cur.val == 1)
+  {
+    out_read_mode = reg_read_mode | (ar0234->ctrls.vflip->cur.val << 15);
+  }
+  else if(ar0234->ctrls.vflip->cur.val == 0)
+  {
+    out_read_mode = reg_read_mode & ~(!ar0234->ctrls.vflip->cur.val << 15);
+  }
+  else
+  {
+    res = -1;
+    printk("%s: invalid flip value\n", __func__);
+  }
+
+  if(res == 0)
+  {
+    ar0234_write_reg(ar0234, READ_MODE_REG, out_read_mode);
+  }
 
   return res;
 }
