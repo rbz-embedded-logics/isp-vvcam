@@ -3,3 +3,4 @@ obj-m += os08a20/
 obj-m += camera-proxy-driver/
 obj-m += ar1335/
 obj-m += ar0234cs/
+obj-m += imx662/
