@@ -20,6 +20,12 @@ static struct vvcam_sccb_data_s imx662_init_setting[] = {};
 #define SHR0_LOW_REG 0x3050
 #define SHR0_MID_REG 0x3051
 #define SHR0_HIGH_REG 0x3052
+#define PULSE1_UP_LOW_REG 0x30b0
+#define PULSE1_UP_MID_REG 0x30b1
+#define PULSE1_UP_HIGH_REG 0x30b2
+#define PULSE1_DN_LOW_REG 0x30b4
+#define PULSE1_DN_MID_REG 0x30b5
+#define PULSE1_DN_HIGH_REG 0x30b6
 
 #endif
 

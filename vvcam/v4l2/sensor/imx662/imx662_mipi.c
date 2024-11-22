@@ -47,6 +47,7 @@
 #define SECS_TO_NSECS           1000000000
 #define T_EXP_ERROR             0
 #define MIN_SHS                 4
+#define COMMUNICATION_PERIOD    10
 
 #define IMX662_TABLE_END		0xffff
 
@@ -111,7 +112,7 @@ static int imx662_s_stream(struct v4l2_subdev *sd, int on);
 static const struct regmap_config imx662_regmap_config = {
   .reg_bits = 16,
   .val_bits = 8,
-  .cache_type = REGCACHE_RBTREE,
+  .cache_type = REGCACHE_NONE,
 };
 
 
@@ -180,8 +181,8 @@ static const struct reg_8 imx662_init_config[] = {
   {0x3021, 0x00, 0xFF, 0}, // VREVERSE = Normal
   {0x3022, 0x00, 0xFF, 0}, // ADBIT[0] = 10bit
   {0x3023, 0x00, 0xFF, 0}, // MDBIT[0] = 10bit
-  {0x3028, 0xe2, 0xFF, 0}, // VMAX
-  {0x3029, 0x04, 0xFF, 0}, // VMAX
+  {0x3028, 0x48, 0xFF, 0}, // VMAX
+  {0x3029, 0x0d, 0xFF, 0}, // VMAX
   {0x302a, 0x00, 0xFF, 0}, // VMAX
   {0x302c, 0x9a, 0xFF, 0}, // HMAX
   {0x302d, 0x0b, 0xFF, 0}, // HMAX
@@ -226,12 +227,12 @@ static const struct reg_8 imx662_init_config[] = {
   {0x3097, 0x00, 0xFF, 0}, // CHDR_AGAIN1[15:8]
   {0x309c, 0x00, 0xFF, 0}, // CHDR_AGAIN0_HG[7:0]
   {0x309d, 0x00, 0xFF, 0}, // CHDR_AGAIN0_HG[15:8]
-  /*{0x30a4, 0xaa, 0xFF, 0}, // XVSOUTSEL[1:0] = VSYNC output; XHSOUTSEL[1:0] = HSYNC output*/
-  /*{0x30a6, 0x00, 0xFF, 0}, // XVS_DRV[1:0] = XVS output; XHS_DRV[1:0] = XHS output; (Master mode)*/
-  {0x30a6, 0x0c, 0xFF, 0}, // XVS input; XHS output
+  {0x30a4, 0xba, 0xFF, 0},  
+  {0x30a6, 0x03, 0xFF, 0}, // XVS input; XHS output ////////////// 0x03
+  {0x30ac, 0x01, 0xFF, 0}, 
   {0x30cc, 0x00, 0xFF, 0}, // XVSLNG[1:0] = 1H
   {0x30cd, 0x00, 0xFF, 0}, // XHSLNG[1:0] = 16clock
-  {0x30c3, 0x01, 0xFF, 0}, // EXTMODE = External sync
+  {0x30ce, 0x01, 0xFF, 0}, // EXTMODE = External sync ////////// 0x01
   {0x30dc, 0x32, 0xFF, 0}, // BLKLEVEL[7:0]
   {0x30dd, 0x40, 0xFF, 0}, // BLKLEVEL[11:8]
   {0x3400, 0x01, 0xFF, 0}, // GAIN_PGC_FIDMD
@@ -524,6 +525,16 @@ static int imx662_calc_h_interval(int fps, int n_lines)
   return new_h_interval;
 }
 
+static int imx662_calc_flash_time(int fps)
+{
+  int flash_time;
+
+  /*flash_time = ((SECS_TO_NSECS / fps)) / 3;*/
+  flash_time = ((SECS_TO_NSECS / fps) / 10000) * 3225;
+
+  return flash_time;
+}
+
 static int imx662_microseconds_to_intervals(struct stimx662 *priv, int exposure_val, int n_lines)
 {
   int exposure_val_nanosec = exposure_val * MICROSECS_TO_NSECS;
@@ -543,11 +554,69 @@ static int imx662_microseconds_to_intervals(struct stimx662 *priv, int exposure_
   return shs;
 }
 
+static int imx662_set_flash_time(struct stimx662 *imx662)
+{
+  int ret =  0;
+  u8 reg_val[3];
+  uint32_t pulse_up, pulse_dn;
+  uint32_t n_lines = 3400;
+  int h_interval;
+  uint32_t shs_val;
+  uint32_t n_h_intervals;
+  int fps = imx662->cur_mode.ae_info.cur_fps / 1024; 
+
+  h_interval = imx662_calc_h_interval(fps, n_lines);
+  n_h_intervals = imx662_calc_flash_time(fps) / h_interval;
+  ret = imx662_read_reg(imx662, SHR0_LOW_REG, &reg_val[0]);
+  if (ret != 0)
+    return -1;
+  
+  ret = imx662_read_reg(imx662, SHR0_MID_REG, &reg_val[1]);
+  if (ret != 0)
+    return -1;
+
+  ret = imx662_read_reg(imx662, SHR0_HIGH_REG, &reg_val[2]);
+  if (ret != 0)
+    return -1;
+  shs_val = reg_val[0] | (reg_val[1] << 8) | (reg_val[2] << 16);
+  pulse_up = shs_val + (uint32_t)COMMUNICATION_PERIOD;
+  pulse_dn = shs_val + (uint32_t)COMMUNICATION_PERIOD + n_h_intervals;
+
+  reg_val[0] = (pulse_up & 0xff);
+  reg_val[1] = (pulse_up >> 8) & 0xff;
+  reg_val[2] = (pulse_up >> 16) & 0xff;
+  ret = imx662_write_reg(imx662, PULSE1_UP_LOW_REG, reg_val[0]);
+  if (ret != 0)
+    return -1;
+  ret = imx662_write_reg(imx662, PULSE1_UP_MID_REG, reg_val[1]);
+  if (ret != 0)
+    return -1;
+  ret = imx662_write_reg(imx662, PULSE1_UP_HIGH_REG, reg_val[2]);
+  if (ret != 0)
+    return -1;
+
+  reg_val[0] = (pulse_dn & 0xff);
+  reg_val[1] = (pulse_dn >> 8) & 0xff;
+  reg_val[2] = (pulse_dn >> 16) & 0xff;
+  ret = imx662_write_reg(imx662, PULSE1_DN_LOW_REG, reg_val[0]);
+  if (ret != 0)
+    return -1;
+  ret = imx662_write_reg(imx662, PULSE1_DN_MID_REG, reg_val[1]);
+  if (ret != 0)
+    return -1;
+  ret = imx662_write_reg(imx662, PULSE1_DN_HIGH_REG, reg_val[2]);
+  if (ret != 0)
+    return -1;
+  printk("%s: h_interval: %d, n_h_intervals: %d, shs_val: %d, pulse_up: %d, pulse_dn: %d, fps: %d, n_lines: %d\n", __func__, h_interval, n_h_intervals, shs_val, pulse_up, pulse_dn, fps, n_lines);
+
+  return 0;
+}
+
 static int imx662_set_exposure(struct stimx662 *imx662, u32 new_exp)
 {
   int ret =  0;
   u16 h_intervals;
-  int n_lines = 1250;
+  int n_lines = 3400;
   u8 aux = 0;
 
 #ifdef DEBUG
@@ -585,16 +654,17 @@ static int imx662_set_exposure(struct stimx662 *imx662, u32 new_exp)
     printk("%s: ERROR. Value failed to write value\n",__func__);
   }
 
+  imx662_set_flash_time(imx662);
   return ret;
 }
 
-static int imx662_get_digital_gain(struct stimx662 *priv,int *val)
+static int imx662_get_digital_gain(struct stimx662 *priv, int *val)
 {
   *(val) = priv->ctrls.gain->cur.val;
   return 0;
 }
 
-static int imx662_set_digital_gain(struct stimx662 *priv,int val)
+static int imx662_set_digital_gain(struct stimx662 *priv, int val)
 {
   u8 aux = 0;
   int res  = 0;
@@ -961,11 +1031,12 @@ static int imx662_set_fps(struct stimx662 *imx662, u32 fps)
   int ret = 0;
   uint32_t real_fps = 0;
 #if MASTER_MODE == 1
-  u16 reg_val = 0;
-  u32 vmax = 1250;
+  u32 reg_val = 0;
+  u32 vmax = 3400;
   u8 aux = 0;
 #endif
 
+  printk("%s: FPS: %d\n", __func__, fps);
   if (fps > imx662->cur_mode.ae_info.max_fps) 
   {
     fps = imx662->cur_mode.ae_info.max_fps;
@@ -979,24 +1050,8 @@ static int imx662_set_fps(struct stimx662 *imx662, u32 fps)
   real_fps = fps / 1024;
 
 #if MASTER_MODE == 1
-  // Obtaining VMAX
-  ret = imx662_read_reg(imx662, VMAX_LOW_REG, &aux);
-  if (ret != 0)
-    return -1;
-  vmax = aux & 0xFF;
-
-  ret = imx662_read_reg(imx662, VMAX_MID_REG, &aux);
-  if (ret != 0)
-    return -1;
-  vmax += (aux << 8);
-
-  ret = imx662_read_reg(imx662, VMAX_HIGH_REG, &aux);
-  if (ret != 0)
-    return -1;
-  vmax += (aux << 16);
-
   // Computing of value to be written in sensor register
-  reg_val = IMX662_PIX_CLK / (vmax * real_fps);
+  reg_val = (IMX662_PIX_CLK / (vmax * real_fps));
 
 #ifdef DEBUG
   printk("%s: Try to set %d fps\n", __func__, real_fps);
@@ -1012,8 +1067,10 @@ static int imx662_set_fps(struct stimx662 *imx662, u32 fps)
     return -1;
   }
 
-  /*// Adjusting exposure time (in microseconds) registers to new frame rate*/
 #endif
+  /*// Adjusting exposure time (in microseconds) registers to new frame rate*/
+  imx662_set_exposure(imx662, imx662->ctrls.exposure->cur.val);
+
   return ret;
 }
 
@@ -1327,22 +1384,22 @@ static int imx662_get_format_code(struct stimx662 *imx662, u32 *code)
   return 0;
 }
 
-static int imx662_s_frame_interval(struct v4l2_subdev *sd, struct v4l2_subdev_frame_interval *fi)
-{
-  struct stimx662 *imx662 = to_imx662(sd);
-  int ret;
+/*static int imx662_s_frame_interval(struct v4l2_subdev *sd, struct v4l2_subdev_frame_interval *fi)*/
+/*{*/
+/*struct stimx662 *imx662 = to_imx662(sd);*/
+/*int ret;*/
 
-  ret = imx662_set_fps(imx662, (u32) (fi->interval.denominator/fi->interval.numerator));
+/*ret = imx662_set_fps(imx662, (u32) (fi->interval.denominator/fi->interval.numerator));*/
 
-  return 0;
-}
+/*return 0;*/
+/*}*/
 
-static int imx662_g_frame_interval(struct v4l2_subdev *sd, struct v4l2_subdev_frame_interval *fi)
-{
-  struct stimx662 *imx662 = to_imx662(sd);
-  fi->interval = imx662->frame_interval;
-  return 0;
-}
+/*static int imx662_g_frame_interval(struct v4l2_subdev *sd, struct v4l2_subdev_frame_interval *fi)*/
+/*{*/
+/*struct stimx662 *imx662 = to_imx662(sd);*/
+/*fi->interval = imx662->frame_interval;*/
+/*return 0;*/
+/*}*/
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(5, 12, 0)
 static int imx662_enum_mbus_code(struct v4l2_subdev *sd,
@@ -1375,8 +1432,8 @@ static const struct v4l2_subdev_pad_ops imx662_subdev_pad_ops = {
 
 static const struct v4l2_subdev_video_ops imx662_subdev_video_ops = {
   .s_stream = imx662_s_stream,
-  .s_frame_interval = imx662_s_frame_interval,
-  .g_frame_interval = imx662_g_frame_interval,
+  /*.s_frame_interval = imx662_s_frame_interval,*/
+  /*.g_frame_interval = imx662_g_frame_interval,*/
 };
 
 static struct v4l2_subdev_core_ops imx662_subdev_core_ops = {
