@@ -43,4 +43,5 @@ cp vvcam/v4l2/sensor/os08a20/os08a20.ko modules
 cp vvcam/v4l2/vvcam-isp.ko modules
 cp vvcam/v4l2/video/vvcam-video.ko modules
 cp vvcam/v4l2/sensor/ar0234cs/ar0234cs.ko modules
+cp vvcam/v4l2/sensor/imx662/imx662.ko modules
 cp vvcam/v4l2/sensor/camera-proxy-driver/basler-camera-driver-vvcam.ko modules
