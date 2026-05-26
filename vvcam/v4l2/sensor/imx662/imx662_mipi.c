@@ -33,15 +33,17 @@
 
 #define IMX662_MAX_EXPOSURE_TIME	49840
 #define IMX662_MIN_EXPOSURE_TIME	50
-#define IMX662_MAX_GAIN			2197
-#define IMX662_MIN_GAIN			150
-#define IMX662_DEF_GAIN			150
+#define IMX662_MAX_GAIN			240
+#define IMX662_MIN_GAIN			0
+#define IMX662_DEF_GAIN			0
 #define IMX662_MAX_ANALOG_GAIN		15	
 #define IMX662_MIN_ANALOG_GAIN		1	
 #define IMX662_DEF_FRAME_RATE		20
 #define IMX662_EXP_TIME_CORRECTION	0
 #define IMX662_MAX_WIDTH		1928
 #define IMX662_MAX_HEIGHT		1208
+#define IMX662_MIN_FLASH_ENABLE   0
+#define IMX662_MAX_FLASH_ENABLE   1
 
 #define MICROSECS_TO_NSECS      1000
 #define SECS_TO_NSECS           1000000000
@@ -55,7 +57,7 @@
 
 #define IMX662_OUT_RANGE (-1)
 
-#define V4L2_CID_FLASH_TIME             (V4L2_CID_DV_CLASS_BASE + 0x1002)
+#define V4L2_CID_FLASH_ENABLE             (V4L2_CID_DV_CLASS_BASE + 0x1002)
 #define V4L2_CID2_GAIN      		    (V4L2_CID_DV_CLASS_BASE + 0x1005)
 #define V4L2_CID_MAX_GAIN      		    (V4L2_CID_DV_CLASS_BASE + 0x1006)
 #define V4L2_CID_MIN_GAIN      		    (V4L2_CID_DV_CLASS_BASE + 0x1007)
@@ -101,7 +103,10 @@ enum {
   VVSENSORIOC_S_MAX_INT_TIME,
   VVSENSORIOC_S_MIN_INT_TIME,
   VVSENSORIOC_G_GAIN,
-  VVSENSORIOC_G_EXP
+  VVSENSORIOC_G_EXP,
+  VVSENSORIOC_S_V_FLIP,
+  VVSENSORIOC_S_H_FLIP,
+  VVSENSORIOC_S_FLASH_ENABLE
 };
 
 /* PRIVATE FUNCTIONS */
@@ -121,6 +126,7 @@ struct imx662_ctrls {
   struct v4l2_ctrl *gain;
   struct v4l2_ctrl *exposure;
   struct v4l2_ctrl *flash_time;
+  struct v4l2_ctrl *flash_enable;
   struct v4l2_ctrl *max_gain;
   struct v4l2_ctrl *min_gain;
   struct v4l2_ctrl *max_exposure;
@@ -554,7 +560,7 @@ static int imx662_microseconds_to_intervals(struct stimx662 *priv, int exposure_
   return shs;
 }
 
-static int imx662_set_flash_time(struct stimx662 *imx662)
+static int imx662_set_flash_time(struct stimx662 *imx662, int enable)
 {
   int ret =  0;
   u8 reg_val[3];
@@ -565,22 +571,30 @@ static int imx662_set_flash_time(struct stimx662 *imx662)
   uint32_t n_h_intervals;
   int fps = imx662->cur_mode.ae_info.cur_fps / 1024; 
 
-  h_interval = imx662_calc_h_interval(fps, n_lines);
-  n_h_intervals = imx662_calc_flash_time(fps) / h_interval;
-  ret = imx662_read_reg(imx662, SHR0_LOW_REG, &reg_val[0]);
-  if (ret != 0)
-    return -1;
-  
-  ret = imx662_read_reg(imx662, SHR0_MID_REG, &reg_val[1]);
-  if (ret != 0)
-    return -1;
+  if(enable == 1)
+  {
+    h_interval = imx662_calc_h_interval(fps, n_lines);
+    n_h_intervals = imx662_calc_flash_time(fps) / h_interval;
+    ret = imx662_read_reg(imx662, SHR0_LOW_REG, &reg_val[0]);
+    if (ret != 0)
+      return -1;
 
-  ret = imx662_read_reg(imx662, SHR0_HIGH_REG, &reg_val[2]);
-  if (ret != 0)
-    return -1;
-  shs_val = reg_val[0] | (reg_val[1] << 8) | (reg_val[2] << 16);
-  pulse_up = shs_val + (uint32_t)COMMUNICATION_PERIOD;
-  pulse_dn = shs_val + (uint32_t)COMMUNICATION_PERIOD + n_h_intervals;
+    ret = imx662_read_reg(imx662, SHR0_MID_REG, &reg_val[1]);
+    if (ret != 0)
+      return -1;
+
+    ret = imx662_read_reg(imx662, SHR0_HIGH_REG, &reg_val[2]);
+    if (ret != 0)
+      return -1;
+    shs_val = reg_val[0] | (reg_val[1] << 8) | (reg_val[2] << 16);
+    pulse_up = shs_val + (uint32_t)COMMUNICATION_PERIOD;
+    pulse_dn = shs_val + (uint32_t)COMMUNICATION_PERIOD + n_h_intervals;
+  }
+  else
+  {
+    pulse_up = 0;
+    pulse_dn = 0;
+  }
 
   reg_val[0] = (pulse_up & 0xff);
   reg_val[1] = (pulse_up >> 8) & 0xff;
@@ -654,7 +668,7 @@ static int imx662_set_exposure(struct stimx662 *imx662, u32 new_exp)
     printk("%s: ERROR. Value failed to write value\n",__func__);
   }
 
-  imx662_set_flash_time(imx662);
+  imx662_set_flash_time(imx662, imx662->ctrls.flash_enable->val);
   return ret;
 }
 
@@ -670,11 +684,12 @@ static int imx662_set_digital_gain(struct stimx662 *priv, int val)
   int res  = 0;
 
   /* NOTE: values coming from AE control are multiplied by 1024 */
-  u32 gain = (val / 1024) - 150;
+  //u32 gain = (val / 1024) - 150;
+  u32 gain = ((10 * val) / (256 * 3));
 
-#ifdef DEBUG
+  /*#ifdef DEBUG*/
   printk("%s: Trying to set %d gain %d\n", __func__, gain, val);
-#endif
+  /*#endif*/
   
   if (gain > priv->ctrls.max_gain->cur.val)
   {
@@ -767,7 +782,7 @@ static int imx662_set_max_gain(struct stimx662 *imx662, int val)
 
   if((val >= IMX662_MIN_GAIN) && (val <= IMX662_MAX_GAIN))
   {
-    val = val - 150;
+    val = val;
     imx662->ctrls.max_gain->val = val;
     imx662->ctrls.max_gain->cur.val = val;
     imx662->cur_mode.ae_info.max_dgain = val * 1024;
@@ -792,7 +807,7 @@ static int imx662_set_min_gain(struct stimx662 *imx662, int val)
 
   if((val >= IMX662_MIN_GAIN) && (val <= IMX662_MAX_GAIN))
   {
-    val = val - 150;
+    val = val;
     imx662->ctrls.min_gain->val = val;
     imx662->ctrls.min_gain->cur.val = val;
     imx662->cur_mode.ae_info.min_dgain = val * 1024;
@@ -820,8 +835,6 @@ static int imx662_s_ctrl(struct v4l2_ctrl *ctrl)
     case V4L2_CID_EXPOSURE:
       ret = imx662_set_exposure(imx662, ctrl->val);
       break;
-    case V4L2_CID_FLASH_TIME:
-      break;
     case V4L2_CID_MAX_GAIN:                                                           
       ret = imx662_set_max_gain(imx662, ctrl->val);                             
       break;
@@ -833,6 +846,11 @@ static int imx662_s_ctrl(struct v4l2_ctrl *ctrl)
       break;
     case V4L2_CID_MIN_EXPOSURE:
       ret = imx662_set_min_exposure(imx662, ctrl->val);
+      break;
+    case V4L2_CID_FLASH_ENABLE:
+      imx662->ctrls.flash_enable->val = ctrl->val;
+      imx662->ctrls.flash_enable->cur.val = ctrl->val;
+      ret = imx662_set_flash_time(imx662, ctrl->val);
       break;
   }
 
@@ -1224,6 +1242,11 @@ static long imx662_priv_ioctl(struct v4l2_subdev *sd, unsigned int cmd, void *ar
     case VVSENSORIOC_G_LENS:
       ret = imx662_get_lens(imx662, arg);
       break;
+    case VVSENSORIOC_S_FLASH_ENABLE:
+      imx662->ctrls.flash_enable->val = *(int *)arg;
+      imx662->ctrls.flash_enable->cur.val = *(int *)arg;
+      ret = imx662_set_flash_time(imx662, *(int *)arg);
+      break;
     default:
       ret = -EINVAL;
       break;
@@ -1500,6 +1523,17 @@ static const struct v4l2_ctrl_config imx662_ctrl_min_exposure = {
   .def = IMX662_MIN_EXPOSURE_TIME,
 };
 
+static const struct v4l2_ctrl_config imx662_ctrl_flash_enable = {
+  .ops = &imx662_ctrl_ops,
+  .id = V4L2_CID_FLASH_ENABLE,
+  .name = "Flash enable",
+  .type = V4L2_CTRL_TYPE_INTEGER,
+  .min = IMX662_MIN_FLASH_ENABLE,
+  .max = IMX662_MAX_FLASH_ENABLE,
+  .step = 1,
+  .def = IMX662_MAX_FLASH_ENABLE,
+};
+
 static const struct of_device_id imx662_of_id_table[] = {
   { .compatible = "sony,imx662" },
   {}
@@ -1717,6 +1751,11 @@ static int imx662_probe(struct i2c_client *client, const struct i2c_device_id *i
   imx662->ctrls.min_exposure = v4l2_ctrl_new_custom(
       &imx662->ctrls.handler,
       &imx662_ctrl_min_exposure,
+      NULL);
+
+  imx662->ctrls.flash_enable = v4l2_ctrl_new_custom(
+      &imx662->ctrls.handler,
+      &imx662_ctrl_flash_enable,
       NULL);
 
   imx662->sd.ctrl_handler = &imx662->ctrls.handler;
