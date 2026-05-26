@@ -182,12 +182,12 @@ struct reg_8 {
 };
 
 /* Con reloj externo a 54 MHz */
-static const struct reg_8 ar0234_init_config[] = {
+static const struct reg_8 ar0234_init_config_0[] = {
 	{0x301a, 0x2058, 0xFFFF, 0}, 
 	{0x302a, 0x0005, 0xFFFF, 0}, //VT_PIX_CLK_DIV
 	{0x302c, 0x0001, 0xFFFF, 0}, //VT_SYS_CLK_DIV
 	{0x302e, 0x0003, 0xFFFF, 0}, //PRE_PLL_CLK_DIV
-	{0x3030, 0x0018, 0xFFFF, 0}, //PLL_MULTIPLIER
+	{0x3030, 0x0011, 0xFFFF, 0}, //PLL_MULTIPLIER
 	{0x3036, 0x000a, 0xFFFF, 0}, //OP_PIX_CLK_DIV
 	{0x3038, 0x0001, 0xFFFF, 0}, //OP_SYS_CLK_DIV
 	{0x30b0, 0x0028, 0xFFFF, 0}, //DIGITAL_TEST
@@ -219,6 +219,43 @@ static const struct reg_8 ar0234_init_config[] = {
 
 };
 
+/* Con reloj externo a 54 MHz */
+static const struct reg_8 ar0234_init_config_1[] = {
+	{0x301a, 0x2058, 0xFFFF, 0}, 
+	{0x302a, 0x0005, 0xFFFF, 0}, //VT_PIX_CLK_DIV
+	{0x302c, 0x0001, 0xFFFF, 0}, //VT_SYS_CLK_DIV
+	{0x302e, 0x0003, 0xFFFF, 0}, //PRE_PLL_CLK_DIV
+	{0x3030, 0x0011, 0xFFFF, 0}, //PLL_MULTIPLIER
+	{0x3036, 0x000a, 0xFFFF, 0}, //OP_PIX_CLK_DIV
+	{0x3038, 0x0001, 0xFFFF, 0}, //OP_SYS_CLK_DIV
+	{0x30b0, 0x0028, 0xFFFF, 0}, //DIGITAL_TEST
+	{0x305e, 0x00ff, 0xFFFF, 0},//GLOBAL_GAIN
+	{0x31b0, 0x0075, 0xFFFF, 0}, //FRAME_PREAMBLE
+	{0x31b2, 0x0054, 0xFFFF, 0}, //LINE_PREAMBLE
+	{0x31b4, 0x4247, 0xFFFF, 0},//MIPI_TIMING_0
+	{0x31b6, 0x4215, 0xFFFF, 0},//MIPI_TIMING_1
+	{0x31b8, 0x804a, 0xFFFF, 0},//MIPI_TIMING_2
+	{0x31ba, 0x028a, 0xFFFF, 0},//MIPI_TIMING_3
+	{0x31bc, 0x0c08, 0xFFFF, 0},//MIPI_TIMING_4
+	{0x3354, 0x002b, 0xFFFF, 0},//MIPI_CNTRL
+	{0x31ac, 0x0a0a, 0xFFFF, 0}, //DATA_FORMAT_BITS
+	{0x31ae, 0x0202, 0xFFFF, 0},//MIPI 2-LANE
+	{0x3002, 0x0044, 0xFFFF, 0},//Y_ADDR_START
+	{0x3004, 0x0008, 0xFFFF, 0},//X_ADDR_START
+	{0x3006, 0x047B, 0xFFFF, 0},//Y_ADDR_END
+	{0x3008, 0x0787, 0xFFFF, 0},//X_ADDR_END
+	{0x300a, 0x087d, 0xFFFF, 0},//FRAME_LENGTH_LINES
+	{0x300c, 0x0264, 0xFFFF, 0},//LINE_LENGTH_PCK
+	{0x3012, 0x07a8, 0xFFFF, 0},//COARSE_INTEGRATION_TIME
+	{0x306e, 0x9010, 0xFFFF, 0},
+	{0x30a2, 0x0001, 0xFFFF, 0},
+	{0x30a6, 0x0001, 0xFFFF, 0},
+	{0x3082, 0x0003, 0xFFFF, 0},
+	{0x3040, 0x0000, 0xFFFF, 0}, 
+	{0x31d0, 0x0000, 0xFFFF, 0}, 
+	{AR0234_TABLE_END, 0x0000, 0x0000, 0} //end config
+
+};
 
 /* Con reloj externo a 50Mhz
 static const struct reg_8 ar0234_init_config[] = {
@@ -941,13 +978,13 @@ static int ar0234_set_fmt(struct v4l2_subdev *sd, struct v4l2_subdev_state *stat
 
     mutex_lock(&ar0234->lock);
 
-    /*if ((fmt->width != ar0234->cur_mode.size.bounds_width) ||*/
-    /*(fmt->height != ar0234->cur_mode.size.bounds_height)) {*/
-    /*pr_err("%s:set sensor format %dx%d error\n",*/
-    /*__func__,fmt->width,fmt->height);*/
-    /*mutex_unlock(&ar0234->lock);*/
-    /*return -EINVAL;*/
-    /*}*/
+    if ((fmt->width != ar0234->cur_mode.size.bounds_width) ||
+        (fmt->height != ar0234->cur_mode.size.bounds_height)) {
+      pr_err("%s:set sensor format %dx%d error\n",
+          __func__,fmt->width,fmt->height);
+      mutex_unlock(&ar0234->lock);
+      return -EINVAL;
+    }
     ar0234->cur_mode.size.bounds_width = fmt->width;
     ar0234->cur_mode.size.bounds_height = fmt->height;
     ar0234->cur_mode.size.width = fmt->width;
@@ -1818,7 +1855,14 @@ static int ar0234_probe(struct i2c_client *client, const struct i2c_device_id *i
 #endif
 
   /* Default sensor configuration */
-  ret = ar0234_write_table(ar0234, ar0234_init_config);
+  if(ar0234->csi_id == 0)
+  {
+    ret = ar0234_write_table(ar0234, ar0234_init_config_0);
+  }
+  else if(ar0234->csi_id == 1)
+  {
+    ret = ar0234_write_table(ar0234, ar0234_init_config_1);
+  }
   if(ret)
   {
     dev_err(&client->dev,
