@@ -52,7 +52,7 @@
 
 #define AR0234_TABLE_END		0xffff
 
-#define AR0234_PIX_CLK			45000000
+#define AR0234_PIX_CLK			42000000 //61200000 // VT_PIX_CLK (2x OP_PIX_CLK, required for MIPI row_time per datasheet eq.6)
 
 #define AR0234_OUT_RANGE (-1)
 
@@ -186,19 +186,20 @@ static const struct reg_8 ar0234_init_config_0[] = {
 	{0x301a, 0x2058, 0xFFFF, 0}, 
 	{0x302a, 0x0005, 0xFFFF, 0}, //VT_PIX_CLK_DIV
 	{0x302c, 0x0001, 0xFFFF, 0}, //VT_SYS_CLK_DIV
-	{0x302e, 0x0003, 0xFFFF, 0}, //PRE_PLL_CLK_DIV
-	{0x3030, 0x0011, 0xFFFF, 0}, //PLL_MULTIPLIER
+	{0x302e, 0x0009, 0xFFFF, 0}, //PRE_PLL_CLK_DIV
+	{0x3030, 0x0046, 0xFFFF, 0}, //PLL_MULTIPLIER
 	{0x3036, 0x000a, 0xFFFF, 0}, //OP_PIX_CLK_DIV
 	{0x3038, 0x0001, 0xFFFF, 0}, //OP_SYS_CLK_DIV
-	{0x30b0, 0x0028, 0xFFFF, 0}, //DIGITAL_TEST
+	{0x30b0, 0x0000, 0xFFFF, 0}, //DIGITAL_TEST
+    {0x30ce, 0x0000, 0xFFFF, 0}, //GRR_CONTROL1
 	{0x305e, 0x00ff, 0xFFFF, 0},//GLOBAL_GAIN
-	{0x31b0, 0x0075, 0xFFFF, 0}, //FRAME_PREAMBLE
-	{0x31b2, 0x0054, 0xFFFF, 0}, //LINE_PREAMBLE
-	{0x31b4, 0x4247, 0xFFFF, 0},//MIPI_TIMING_0
-	{0x31b6, 0x4215, 0xFFFF, 0},//MIPI_TIMING_1
-	{0x31b8, 0x804a, 0xFFFF, 0},//MIPI_TIMING_2
-	{0x31ba, 0x028a, 0xFFFF, 0},//MIPI_TIMING_3
-	{0x31bc, 0x0c08, 0xFFFF, 0},//MIPI_TIMING_4
+	{0x31b0, 0x007f, 0xFFFF, 0}, //FRAME_PREAMBLE
+	{0x31b2, 0x005a, 0xFFFF, 0}, //LINE_PREAMBLE
+	{0x31b4, 0x4248, 0xFFFF, 0},//MIPI_TIMING_0
+	{0x31b6, 0x4257, 0xFFFF, 0},//MIPI_TIMING_1
+	{0x31b8, 0x804b, 0xFFFF, 0},//MIPI_TIMING_2
+	{0x31ba, 0x030b, 0xFFFF, 0},//MIPI_TIMING_3
+	{0x31bc, 0x0d09, 0xFFFF, 0},//MIPI_TIMING_4
 	{0x3354, 0x002b, 0xFFFF, 0},//MIPI_CNTRL
 	{0x31ac, 0x0a0a, 0xFFFF, 0}, //DATA_FORMAT_BITS
 	{0x31ae, 0x0202, 0xFFFF, 0},//MIPI 2-LANE
@@ -206,17 +207,16 @@ static const struct reg_8 ar0234_init_config_0[] = {
 	{0x3004, 0x0008, 0xFFFF, 0},//X_ADDR_START
 	{0x3006, 0x047B, 0xFFFF, 0},//Y_ADDR_END
 	{0x3008, 0x0787, 0xFFFF, 0},//X_ADDR_END
-	{0x300a, 0x087d, 0xFFFF, 0},//FRAME_LENGTH_LINES
+	{0x300a, 0x06ae, 0xFFFF, 0},//FRAME_LENGTH_LINES
 	{0x300c, 0x0264, 0xFFFF, 0},//LINE_LENGTH_PCK
-	{0x3012, 0x07a8, 0xFFFF, 0},//COARSE_INTEGRATION_TIME
+	{0x3012, 0x0157, 0xFFFF, 0},//COARSE_INTEGRATION_TIME (500 lines = 5000us, within FLL-4)
 	{0x306e, 0x9010, 0xFFFF, 0},
 	{0x30a2, 0x0001, 0xFFFF, 0},
 	{0x30a6, 0x0001, 0xFFFF, 0},
 	{0x3082, 0x0003, 0xFFFF, 0},
-	{0x3040, 0x0000, 0xFFFF, 0}, 
-	{0x31d0, 0x0000, 0xFFFF, 0}, 
+	{0x3040, 0x0000, 0xFFFF, 0},
+	{0x31d0, 0x0000, 0xFFFF, 0},
 	{AR0234_TABLE_END, 0x0000, 0x0000, 0} //end config
-
 };
 
 /* Con reloj externo a 54 MHz */
@@ -224,19 +224,20 @@ static const struct reg_8 ar0234_init_config_1[] = {
 	{0x301a, 0x2058, 0xFFFF, 0}, 
 	{0x302a, 0x0005, 0xFFFF, 0}, //VT_PIX_CLK_DIV
 	{0x302c, 0x0001, 0xFFFF, 0}, //VT_SYS_CLK_DIV
-	{0x302e, 0x0003, 0xFFFF, 0}, //PRE_PLL_CLK_DIV
-	{0x3030, 0x0011, 0xFFFF, 0}, //PLL_MULTIPLIER
+	{0x302e, 0x0009, 0xFFFF, 0}, //PRE_PLL_CLK_DIV
+	{0x3030, 0x0046, 0xFFFF, 0}, //PLL_MULTIPLIER
 	{0x3036, 0x000a, 0xFFFF, 0}, //OP_PIX_CLK_DIV
 	{0x3038, 0x0001, 0xFFFF, 0}, //OP_SYS_CLK_DIV
-	{0x30b0, 0x0028, 0xFFFF, 0}, //DIGITAL_TEST
+	{0x30b0, 0x0000, 0xFFFF, 0}, //DIGITAL_TEST
+    {0x30ce, 0x0000, 0xFFFF, 0}, //GRR_CONTROL1
 	{0x305e, 0x00ff, 0xFFFF, 0},//GLOBAL_GAIN
-	{0x31b0, 0x0075, 0xFFFF, 0}, //FRAME_PREAMBLE
-	{0x31b2, 0x0054, 0xFFFF, 0}, //LINE_PREAMBLE
-	{0x31b4, 0x4247, 0xFFFF, 0},//MIPI_TIMING_0
-	{0x31b6, 0x4215, 0xFFFF, 0},//MIPI_TIMING_1
-	{0x31b8, 0x804a, 0xFFFF, 0},//MIPI_TIMING_2
-	{0x31ba, 0x028a, 0xFFFF, 0},//MIPI_TIMING_3
-	{0x31bc, 0x0c08, 0xFFFF, 0},//MIPI_TIMING_4
+	{0x31b0, 0x007f, 0xFFFF, 0}, //FRAME_PREAMBLE
+	{0x31b2, 0x005a, 0xFFFF, 0}, //LINE_PREAMBLE
+	{0x31b4, 0x4248, 0xFFFF, 0},//MIPI_TIMING_0
+	{0x31b6, 0x4257, 0xFFFF, 0},//MIPI_TIMING_1
+	{0x31b8, 0x804b, 0xFFFF, 0},//MIPI_TIMING_2
+	{0x31ba, 0x030b, 0xFFFF, 0},//MIPI_TIMING_3
+	{0x31bc, 0x0d09, 0xFFFF, 0},//MIPI_TIMING_4
 	{0x3354, 0x002b, 0xFFFF, 0},//MIPI_CNTRL
 	{0x31ac, 0x0a0a, 0xFFFF, 0}, //DATA_FORMAT_BITS
 	{0x31ae, 0x0202, 0xFFFF, 0},//MIPI 2-LANE
@@ -244,17 +245,16 @@ static const struct reg_8 ar0234_init_config_1[] = {
 	{0x3004, 0x0008, 0xFFFF, 0},//X_ADDR_START
 	{0x3006, 0x047B, 0xFFFF, 0},//Y_ADDR_END
 	{0x3008, 0x0787, 0xFFFF, 0},//X_ADDR_END
-	{0x300a, 0x087d, 0xFFFF, 0},//FRAME_LENGTH_LINES
+	{0x300a, 0x06ae, 0xFFFF, 0},//FRAME_LENGTH_LINES
 	{0x300c, 0x0264, 0xFFFF, 0},//LINE_LENGTH_PCK
-	{0x3012, 0x07a8, 0xFFFF, 0},//COARSE_INTEGRATION_TIME
+	{0x3012, 0x0157, 0xFFFF, 0},//COARSE_INTEGRATION_TIME (500 lines = 5000us, within FLL-4)
 	{0x306e, 0x9010, 0xFFFF, 0},
 	{0x30a2, 0x0001, 0xFFFF, 0},
 	{0x30a6, 0x0001, 0xFFFF, 0},
 	{0x3082, 0x0003, 0xFFFF, 0},
-	{0x3040, 0x0000, 0xFFFF, 0}, 
-	{0x31d0, 0x0000, 0xFFFF, 0}, 
+	{0x3040, 0x0000, 0xFFFF, 0},
+	{0x31d0, 0x0000, 0xFFFF, 0},
 	{AR0234_TABLE_END, 0x0000, 0x0000, 0} //end config
-
 };
 
 /* Con reloj externo a 50Mhz
@@ -284,7 +284,7 @@ static const struct reg_8 ar0234_init_config[] = {
 	{0x3008, 0x0787, 0xFFFF, 0},//X_ADDR_END
 	{0x300a, 0x087d, 0xFFFF, 0},//FRAME_LENGTH_LINES
 	{0x300c, 0x0264, 0xFFFF, 0},//LINE_LENGTH_PCK
-	{0x3012, 0x07a8, 0xFFFF, 0},//COARSE_INTEGRATION_TIME
+	{0x3012, 0x01F4, 0xFFFF, 0},//COARSE_INTEGRATION_TIME (500 lines = 5000us, within FLL-4)
 	{0x306e, 0x9010, 0xFFFF, 0},
 	{0x30a2, 0x0001, 0xFFFF, 0},
 	{0x30a6, 0x0001, 0xFFFF, 0},
@@ -313,8 +313,8 @@ static struct vvcam_mode_info_s ar0234_mode_info[] = {
                 },
                 .bayer_pattern  = BAYER_GRBG,
                 .ae_info = {
-                        .def_frm_len_lines     = 0x478,
-                        .curr_frm_len_lines    = 0x478,
+                        .def_frm_len_lines     = 0x4c4,
+                        .curr_frm_len_lines    = 0x4c4,
                         .one_line_exp_time_ns  = 1000,
                         .max_integration_line  = 0x2918,
                         .min_integration_line  = 1,
@@ -353,8 +353,8 @@ static struct vvcam_mode_info_s ar0234_mode_info[] = {
                 },
                 .bayer_pattern  = BAYER_GRBG,
                 .ae_info = {
-                        .def_frm_len_lines     = 0x478,
-                        .curr_frm_len_lines    = 0x478,
+                        .def_frm_len_lines     = 0x4c4,
+                        .curr_frm_len_lines    = 0x4c4,
                         .one_line_exp_time_ns  = 1000,
                         .max_integration_line  = 0x2918,
                         .min_integration_line  = 1,
@@ -498,17 +498,15 @@ static int ar0234_set_exposure(struct star0234 *ar0234, u32 new_exp)
 	printk("%s: Trying exposure value: %d \n", __func__, new_exp);
 #endif	
 
-	if(new_exp > ar0234->cur_mode.ae_info.max_integration_line) 
+	if(new_exp > AR0234_MAX_EXPOSURE_TIME)
     {
-      printk("%s: ERROR. Exposure value out of range, setting exposure to maximum (%d)\n",__func__, ar0234->cur_mode.ae_info.max_integration_line);
-      new_exp = ar0234->cur_mode.ae_info.max_integration_line;
-    }        
-    
-    if (new_exp < ar0234->cur_mode.ae_info.min_integration_line)
-	{
-      printk("%s: ERROR. Exposure value out of range, setting exposure to minimum (%d)\n",__func__, ar0234->cur_mode.ae_info.min_integration_line);
-      new_exp = ar0234->cur_mode.ae_info.min_integration_line;
-	}
+      new_exp = AR0234_MAX_EXPOSURE_TIME;
+    }
+
+    if (new_exp < AR0234_MIN_EXPOSURE_TIME)
+    {
+      new_exp = AR0234_MIN_EXPOSURE_TIME;
+    }
     // Getting line length pck for new register exposure value.
     ret = ar0234_read_reg(ar0234, LINE_LENGTH_PCK_REG, &llp);
     if (ret != 0)
@@ -518,15 +516,18 @@ static int ar0234_set_exposure(struct star0234 *ar0234, u32 new_exp)
 
 
     // Computing COARSE INTEGRATION TIME register value. Time new_exp given in microseconds.
-    coarse_exp_time = AR0234_PIX_CLK/1000000;
-    coarse_exp_time = coarse_exp_time * new_exp/ llp;
+    // Multiply first to avoid integer truncation (e.g. 61200000/1000000=61, not 61.2).
+    coarse_exp_time = (u64)AR0234_PIX_CLK * new_exp / ((u64)llp * 1000000ULL);
 
-    if (coarse_exp_time > (ar0234->format.width + ar0234->x_start - 1) )
+    if (coarse_exp_time > (ar0234->format.height + ar0234->y_start - 1) )
     {
       printk("%s: ERROR. CIT value not valid for this resolution\n",__func__);
       return -1;
     }
 
+#ifdef DEBUG
+    printk("%s: AR0234_PIX_CLK = %d, new_exp = %d, llp = %d, COARSE_INTEGRATION_TIME = 0x%llx\n", __func__, AR0234_PIX_CLK, new_exp, llp, coarse_exp_time);
+#endif
     ret = ar0234_write_reg(ar0234, COARSE_INTEGRATION_TIME_REG, (u16) coarse_exp_time);
     if((ret >= 0))
     {
@@ -601,10 +602,12 @@ static int ar0234_set_max_exposure(struct star0234 *ar0234, int in_val)
     ar0234->ctrls.max_exposure->val = val;
     ar0234->ctrls.max_exposure->cur.val = val;
     ar0234->cur_mode.ae_info.max_integration_line = val;
-#ifdef DEBUG
-    printk("%s: Set to %d \n", __func__, ar0234->cur_mode.ae_info.max_integration_line);
-#endif
-  } 
+    if(ar0234->ctrls.exposure->val > ar0234->ctrls.max_exposure->val)
+    {
+      printk("%s: Actual exposure greater than maximum. Fixing\n", __func__);
+      ar0234_set_exposure(ar0234, ar0234->ctrls.max_exposure->val);
+    }
+  }
   else
   {
     printk("%s: ERROR. Value failed to write set new value %d\n", __func__, val);
@@ -626,6 +629,11 @@ static int ar0234_set_min_exposure(struct star0234 *ar0234, int in_val)
     ar0234->ctrls.min_exposure->val = val;
     ar0234->ctrls.min_exposure->cur.val = val;
     ar0234->cur_mode.ae_info.min_integration_line = val;
+    if(ar0234->ctrls.exposure->val < ar0234->ctrls.min_exposure->val)
+    {
+      printk("%s: Actual exposure lower than minimum. Fixing\n", __func__);
+      ar0234_set_exposure(ar0234, ar0234->ctrls.min_exposure->val);
+    }
 #ifdef DEBUG
     printk("%s: Set to %d \n", __func__, ar0234->cur_mode.ae_info.min_integration_line);
 #endif
@@ -1142,6 +1150,10 @@ static int ar0234_set_fps(struct star0234 *ar0234, u32 fps)
 {
 	int ret = 0;
 	uint32_t real_fps = 0;
+#if MASTER_MODE == 1
+	u32 reg_val = 0;
+	u16 fll = 0;
+#endif
 
 	if (fps > ar0234->cur_mode.ae_info.max_fps) 
 	{
@@ -1155,19 +1167,17 @@ static int ar0234_set_fps(struct star0234 *ar0234, u32 fps)
 	ar0234->cur_mode.ae_info.cur_fps = fps;
 	real_fps = fps / 1024;
 	
-	// Obtaining frame lenght line from sensor register
-	//ret = ar0234_read_reg(ar0234, FRAME_LENGTH_LINE_REG, &fll);
-	if (ret != 0)
-	{
-		return -1;
-	}
 
 	// Computing of value to be written in sensor register
 #if MASTER_MODE == 1
 
-	u32 reg_val = 0;
-	u16 fll = 0;
 	
+	// Obtaining frame lenght line from sensor register
+	ret = ar0234_read_reg(ar0234, FRAME_LENGTH_LINE_REG, &fll);
+	if (ret != 0)
+	{
+		return -1;
+	}
 	reg_val = AR0234_PIX_CLK / (fll * real_fps);
 
 	#ifdef DEBUG
